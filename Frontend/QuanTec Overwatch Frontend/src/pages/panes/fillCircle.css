@@ -1,0 +1,29 @@
+.fillCircleContainer {
+    height: 200px;
+    width: 200px;
+    margin-top: 10px;
+}
+
+.fillCircleContainer * {
+    transition: 1s;
+}
+
+.fillCircle {
+    color: whitesmoke;
+}
+
+.fillCircle > * {
+    color: whitesmoke;
+}
+
+#fillCirclePercentage {
+    margin: 0;
+    text-align: center;
+    top: 50%;
+    transform: translateY(-320%);
+}
+
+.circleShape {
+    transform: rotate(-90deg);
+    transform-origin: 50% 50%;
+}
