@@ -33,10 +33,10 @@ public class Main {
 
         Random random = new Random();
         // Keystore filename and password are the first and second arguments. We as such need to do some checks here.
-        if(args.length < 2){
-            Logging.logFatal("[System] Expected at least two arguments, got "+args.length+".");
-            System.exit(1);
-        }
+//        if(args.length < 2){
+//            Logging.logFatal("[System] Expected at least two arguments, got "+args.length+".");
+//            System.exit(1);
+//        }
 
         // final String KEYSTORE_FILENAME = args[0];
         // Charseq the second one.

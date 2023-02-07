@@ -339,7 +339,7 @@ public class Client extends Thread {
                                     } else {
                                         portList = Format.formatPortList(portListArr);
                                     }
-                                    
+
                                     json.append(String.format("{\"name\":\"%s\",\"state\":\"%s\",\"status\":\"%s\",\"ports\":%s},", container[0], container[1], containerState, portList));
                                 }
 
