@@ -1,0 +1,48 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@500;700&display=swap');
+
+.logoutContainer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    background-color: rgb(55,55,55);
+}
+
+.logoutBox {
+    border: 4px solid rgb(125,125,125);
+    margin-left: 15px;
+    margin-right: 15px;
+    margin-top: 5px;
+    margin-bottom: 20px;
+    padding: 10px;
+    border-radius: 25px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+}
+
+.logoutBox > h1 {
+    font-family: 'Roboto';
+    color: whitesmoke;
+}
+
+#logoutButton {
+    border: 2px solid whitesmoke;
+    background-color: rgb(125,125,125);
+    color: whitesmoke;
+    border-radius: 25px;
+    font-family: 'Roboto';
+    width: 35%;
+    aspect-ratio: 4;
+    font-size: 1.25vw;
+    transition: 0.15s;
+}
+
+#logoutButton:hover {
+    background-color: rgb(128,0,0);
+}
+
+#logoutButton:active {
+    background-color: red;
+}

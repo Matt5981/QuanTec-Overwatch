@@ -1,0 +1,9 @@
+src/main/resources/keystore/server.p12
+build
+.gradle
+gradle
+out
+quantec.secret
+
+# Idea files
+./.idea
