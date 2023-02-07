@@ -2,6 +2,7 @@ package org.matt598.quantecoverwatch.clients;
 
 import org.matt598.quantecoverwatch.commands.LXDUtils;
 import org.matt598.quantecoverwatch.credentials.CredentialManager;
+import org.matt598.quantecoverwatch.utils.Format;
 import org.matt598.quantecoverwatch.utils.Logging;
 import org.matt598.quantecoverwatch.utils.ResponseTemplates;
 
@@ -331,7 +332,15 @@ public class Client extends Thread {
                                         if(defer != null) containerState = defer;
                                     }
 
-                                    json.append(String.format("{\"name\":\"%s\",\"state\":\"%s\",\"status\":\"%s\"},", container[0], container[1], containerState));
+                                    String[] portListArr = LXDUtils.getOpenPorts(container[0]);
+                                    String portList;
+                                    if(portListArr == null){
+                                        portList = "null";
+                                    } else {
+                                        portList = Format.formatPortList(portListArr);
+                                    }
+                                    
+                                    json.append(String.format("{\"name\":\"%s\",\"state\":\"%s\",\"status\":\"%s\",\"ports\":%s},", container[0], container[1], containerState, portList));
                                 }
 
                                 json.deleteCharAt(json.length()-1).append("]}");

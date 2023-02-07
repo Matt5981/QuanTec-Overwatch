@@ -251,7 +251,20 @@ class Dashboard extends React.Component {
                 button = null;
             }
 
-            tableContents.push(<tr><td>{ele.name}</td><td className='flexHorizontal'><ul><li className={finalState}>{finalState}</li></ul><hr />{(USER_CLASSES[localStorage.getItem('usrClass')] >= USER_CLASSES['ADMINISTRATOR'] && button !== null) ? <button className={'containerStopStart' + button} id={ele.name} onClick={this.stopStartClick}>{(button === ' containerStart') ? 'Start' : 'Stop'}</button> : null}</td></tr>);
+            // If the 'ports' field isn't null, draw another <td> that has the list of ports shown.
+            if(ele.ports !== null){
+
+                var portString;
+                ele.ports.forEach(ele => {
+                    portString += (ele + ', ');
+                })
+                portString = portString.slice(0, -2);
+
+                tableContents.push(<tr><td>{ele.name}</td><td>{portString}</td><td className='flexHorizontal'><ul><li className={finalState}>{finalState}</li></ul><hr />{(USER_CLASSES[localStorage.getItem('usrClass')] >= USER_CLASSES['ADMINISTRATOR'] && button !== null) ? <button className={'containerStopStart' + button} id={ele.name} onClick={this.stopStartClick}>{(button === ' containerStart') ? 'Start' : 'Stop'}</button> : null}</td></tr>);
+            } else {
+                tableContents.push(<tr><td>{ele.name}</td><td className='flexHorizontal'><ul><li className={finalState}>{finalState}</li></ul><hr />{(USER_CLASSES[localStorage.getItem('usrClass')] >= USER_CLASSES['ADMINISTRATOR'] && button !== null) ? <button className={'containerStopStart' + button} id={ele.name} onClick={this.stopStartClick}>{(button === ' containerStart') ? 'Start' : 'Stop'}</button> : null}</td></tr>);
+            }
+
         });
 
         return (

@@ -7,11 +7,12 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 
 public class LXDUtils {
     private static final String LIST_CMD = "sudo -u lxdinteg /home/lxdinteg/lxdwrap foo list bar.service";
-    private static final String[] ACCEPTABLE_METHODS = {"status", "start", "stop"};
+    private static final String[] ACCEPTABLE_METHODS = {"status", "start", "stop", "listprofdev"};
     private static String assembleStatusCMD(String containerName, String method, String serviceName){
 
         List<String> validMethods = new ArrayList<>();
@@ -97,6 +98,51 @@ public class LXDUtils {
                 }
             }
             return null;
+        } catch (IOException | IllegalArgumentException | NullPointerException | ArrayIndexOutOfBoundsException e){
+            return null;
+        }
+    }
+
+    public static String[] getOpenPorts(String containerName){
+        // Get open ports. LXD returns a bunch of crap, so we'll need to essentially look for the third integer after splitting a line
+        // beginning with "  listen" by colons, then removing duplicates. We'll also prepend whether they're UDP or TCP, for the record.
+
+        // First, issue the command:
+        try {
+            BufferedReader resp = new BufferedReader(new InputStreamReader(Runtime.getRuntime().exec(assembleStatusCMD(containerName, "status", containerName+".service")).getInputStream()));
+            List<String> returned = new ArrayList<>();
+            String temp = resp.readLine();
+            while(temp != null){
+                returned.add(temp);
+                temp = resp.readLine();
+            }
+
+            // This one's pretty similar to the list command. The difference here is that instead of having to churn
+            // each line, we just have to find a particular one that starts with 5 spaces, followed by the exact word 'Active:',
+            // followed by another space.
+
+            // We also need to make sure that we DON'T list any ports that are set to bind to the container, since not only are
+            // those reverse ports but they're dangerous to expose should somebody get RCE on the container.
+            List<String> fmt = new ArrayList<>();
+            for(int i = 0; i < returned.size(); i++){
+                if(returned.get(i).startsWith("  listen: ")){
+                    if(!returned.get(i-2).equals("  bind: container")){
+                        fmt.add(returned.get(i).substring(10).split(":")[2]+"/"+returned.get(i).substring(10).split(":")[0]);
+                    }
+                }
+            }
+
+            // Cheeky O(n) duplicate removal :D
+            HashMap<String, Boolean> duplicate = new HashMap<>();
+            for(String str : fmt){
+                if(duplicate.get(str) == null){
+                    duplicate.put(str, true);
+                } else {
+                    fmt.remove(str);
+                }
+            }
+
+            return fmt.toArray(new String[0]);
         } catch (IOException | IllegalArgumentException | NullPointerException | ArrayIndexOutOfBoundsException e){
             return null;
         }
