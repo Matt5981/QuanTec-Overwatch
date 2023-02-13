@@ -254,7 +254,7 @@ class Dashboard extends React.Component {
             // If the 'ports' field isn't null, draw another <td> that has the list of ports shown.
             if(ele.ports !== null){
 
-                var portString;
+                var portString = '';
                 ele.ports.forEach(ele => {
                     portString += (ele + ', ');
                 })
