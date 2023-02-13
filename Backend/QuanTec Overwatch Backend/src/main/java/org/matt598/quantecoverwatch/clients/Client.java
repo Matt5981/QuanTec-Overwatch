@@ -285,7 +285,7 @@ public class Client extends Thread {
                                 // The class is set later.
                                 if(credentialManager.getUserClass(username).ordinal() < CredentialManager.USER_CLASS.ADMINISTRATOR.ordinal()){
                                     toClient.print(ResponseTemplates.FORBIDDEN);
-                                } else if((lines.length < 3) || (credentialManager.getUserClass(lines[1]) != null)){
+                                } else if((lines.length < 3) || (credentialManager.getUserClass(lines[1]) != null) || lines[1].equals("")){
                                     toClient.print(ResponseTemplates.BADREQ);
                                 } else {
                                     Logging.logInfo("[Client Events] User \""+username+"\" added a new user, with name \""+lines[1]+"\".");
