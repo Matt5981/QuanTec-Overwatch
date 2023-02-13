@@ -109,7 +109,7 @@ public class LXDUtils {
 
         // First, issue the command:
         try {
-            BufferedReader resp = new BufferedReader(new InputStreamReader(Runtime.getRuntime().exec(assembleStatusCMD(containerName, "status", containerName+".service")).getInputStream()));
+            BufferedReader resp = new BufferedReader(new InputStreamReader(Runtime.getRuntime().exec(assembleStatusCMD(containerName, "listprofdev", containerName+".service")).getInputStream()));
             List<String> returned = new ArrayList<>();
             String temp = resp.readLine();
             while(temp != null){
@@ -122,7 +122,11 @@ public class LXDUtils {
             // followed by another space.
 
             // We also need to make sure that we DON'T list any ports that are set to bind to the container, since not only are
-            // those reverse ports but they're dangerous to expose should somebody get RCE on the container.
+            // those reverse ports, but they're dangerous to expose should somebody get RCE on the container.
+            if(returned.size() == 0){
+                throw new IllegalStateException("Invocation of wrapper returned nothing, likely crashed.");
+            }
+
             List<String> fmt = new ArrayList<>();
             for(int i = 0; i < returned.size(); i++){
                 if(returned.get(i).startsWith("  listen: ")){
@@ -149,7 +153,7 @@ public class LXDUtils {
     }
 
     // Start and stop are even easier, since we don't wait for them to return and simply run. We will however set a timeout,
-    // as stopping certain servers has been known to take ages (COUGH COUGH COUGH *ark* COUGH COUGH COUGH).
+    // as stopping certain servers has been known to take ages (COUGH COUGH COUGH *That dinosaur game* COUGH COUGH COUGH).
 
     /** <h2>Start Service</h2>
      * Starts the specified systemd service unit inside the specified container. This will wait for exactly 2 minutes

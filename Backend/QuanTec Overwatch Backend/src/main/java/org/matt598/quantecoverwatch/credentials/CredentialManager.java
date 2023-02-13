@@ -213,8 +213,10 @@ public class CredentialManager {
             if(set.getUsername().equals(username)){
                 set.setLastLogin(lastLogin);
                 credentialSetMutatorHandler();
+                return;
             }
         }
+        Logging.logError("Unable to set lastlogin value for user \""+username+"\", as the user was not found in the credential list.");
     }
 
     /** <h2>checkToken</h2>
@@ -288,7 +290,7 @@ public class CredentialManager {
         for(int i = 0; i < credentialList.size(); i++){
             // We need to use an old-style for loop here since we need to not add a comma to the last one.
             CredentialSet set = credentialList.get(i);
-            json.append((i != credentialList.size() - 1) ? credentialSetJSONTemplate(set.getUsername(), set.getUserClass(), set.getLastLogin())+"," : credentialSetJSONTemplate(set.getUsername(), set.getUserClass(), 0L));
+            json.append((i != credentialList.size() - 1) ? credentialSetJSONTemplate(set.getUsername(), set.getUserClass(), set.getLastLogin())+"," : credentialSetJSONTemplate(set.getUsername(), set.getUserClass(), set.getLastLogin()));
         }
         json.append("]}");
         return json.toString();

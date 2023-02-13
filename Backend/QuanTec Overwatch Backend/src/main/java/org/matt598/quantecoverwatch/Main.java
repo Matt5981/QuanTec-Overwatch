@@ -23,7 +23,7 @@ import java.util.concurrent.TimeUnit;
 // TODO DELETE and PUT methods are required for RESTful compliance
 
 public class Main {
-    private static final String VERSION = "v0.1 Beta";
+    private static final String VERSION = "v0.2 Beta";
     private static final int PORT = 8443;
     public static final String USER_CREDENTIAL_FILE = "quantec.secret";
 
