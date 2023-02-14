@@ -14,9 +14,9 @@ public class CredentialSet implements Serializable {
     @Serial
     private static final long serialVersionUID = 1L;
 
-    private final String username;
-    private final String salt;
-    private final String hash;
+    private String username;
+    private String salt;
+    private String hash;
     private long lastLogin;
     private CredentialManager.USER_CLASS userClass;
     private String userConfig;
@@ -70,6 +70,10 @@ public class CredentialSet implements Serializable {
         return this.username;
     }
 
+    public void setUsername(String username){
+        this.username = username;
+    }
+
     public CredentialManager.USER_CLASS getUserClass(){
         return this.userClass;
     }
@@ -92,6 +96,22 @@ public class CredentialSet implements Serializable {
 
     public void setLastLogin(long lastLogin){
         this.lastLogin = lastLogin;
+    }
+
+    // FIXME improper password handling, type should be char[]
+    public void changePass(String newPass){
+        try {
+            SecureRandom random = SecureRandom.getInstanceStrong();
+            byte[] salt = new byte[SALT_SIZE];
+            random.nextBytes(salt);
+            KeySpec spec = new PBEKeySpec(newPass.toCharArray(), salt, ITERATIONS, KEY_LEN);
+            SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1");
+
+            this.salt = Base64.getEncoder().encodeToString(salt);
+            this.hash = Base64.getEncoder().encodeToString(factory.generateSecret(spec).getEncoded());
+        } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
+            e.printStackTrace();
+        }
     }
 
     public boolean authenticate(String password){

@@ -43,19 +43,7 @@
   font-size: 1.15vw;
 }
 
-#username {
-  background-color: rgb(55,55,55);
-  border: 2px solid rgb(240,240,240);
-  border-radius: 25px;
-  font-size: 1.15vw;
-  color: rgb(240,240,240);
-  padding-left: 7.5%;
-  margin-left: 2.5%;
-  margin-right: 2.5%;
-  font-family: inherit;
-}
-
-#password {
+#password, #username {
   background-color: rgb(55,55,55);
   border: 2px solid rgb(240,240,240);
   border-radius: 25px;

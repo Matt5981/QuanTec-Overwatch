@@ -129,6 +129,35 @@ public class CredentialManager {
         return false;
     }
 
+    /** <h2>setUsername</h2>
+     * Changes the username of a user. Does nothing if no user exists bearing the username {oldUsername}.
+     * @param oldUsername The username of the user to change.
+     * @param newUsername The new username of the user named in the above parameter.
+     */
+    public void setUsername(String oldUsername, String newUsername){
+        for(CredentialSet set : credentialList){
+            if(set.getUsername().equals(oldUsername)){
+                set.setUsername(newUsername);
+                credentialSetMutatorHandler(oldUsername);
+            }
+        }
+    }
+
+    /** <h2>setPass</h2>
+     * Updates the hash of the specified user by regenerating it with the following password. Does nothing if no user exists bearing the username {username}.
+     * @param username The user whose password will be changed.
+     * @param password The new password.
+     */
+    public void setPass(String username, String password){
+        // TODO change password parameter to char[] so it can be blanked
+        for(CredentialSet set : credentialList){
+            if(set.getUsername().equals(username)){
+                set.changePass(password);
+                credentialSetMutatorHandler(username);
+            }
+        }
+    }
+
     /** <h2>createBearerToken</h2>
      * Creates a new bearer token, adding it to the credential manager's list. This token is then returned as a
      * Base64-encoded string, which cannot be retrieved again outside of the credential manager class.

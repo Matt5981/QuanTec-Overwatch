@@ -23,6 +23,10 @@
     color: whitesmoke;
 }
 
+#userSettingsHeader > h1 {
+    margin: 0;
+}
+
 .settingsContainer {
     border: 4px solid rgb(125,125,125);
     margin-left: 15px;
@@ -36,6 +40,12 @@
 .settingsContainer > h1 {
     color: whitesmoke;
     font-family: 'Roboto';
+}
+
+.settingsContainer > h2 {
+    color: whitesmoke;
+    font-family: 'Roboto';
+    font-weight: 100;
 }
 
 .settingIndividual {
@@ -65,6 +75,7 @@
     flex-direction: column;
     margin-bottom: 10px;
     margin-top: 10px;
+    color: whitesmoke;
 }
 
 .settingsTitleSubtitle > h2, .settingsTitleSubtitle > h1 {
@@ -73,6 +84,7 @@
 
 .settingsTitleSubtitle > h2 {
     font-weight: 100;
+    font-family: 'Roboto';
 }
 
 .dialogBoxContainer {
@@ -163,7 +175,7 @@
     font-family: inherit;
     height: 30px;
     width: 75px;
-    transition: 0.15s;
+    transition: 0.15s linear;
 }
 
 .userDeleteButton:hover {
@@ -173,6 +185,67 @@
 .userDeleteButton:active {
     background-color: red;
 }
+
+.userEditPane {
+    border: 2px solid whitesmoke;
+    border-radius: 10px;
+    background-color: rgb(55,55,55);
+    color: whitesmoke;
+    font-family: inherit;
+    height: 30px;
+    width: 75px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: 0.15s linear;
+    overflow: hidden;
+    margin-right: 77.5px;
+    margin-left: 117.5px;
+}
+
+.userEditPaneActive {
+    width: 230px;
+    height: 40px;
+    margin-left: 40px;
+    margin-right: 0px;
+    border: 1px solid whitesmoke;
+}
+
+.userEditPane:hover {
+   background-color: rgb(65,65,65); 
+}
+
+.userChangeDetailButton {
+    width: 100px;
+    height: 30px;
+    border: 2px solid whitesmoke;
+    border-radius: 10px;
+    background-color: rgb(55,55,55);
+    color: whitesmoke;
+    font-family: 'Ubuntu mono';
+    font-size: 0.70vw;
+    overflow: hidden;
+}
+
+.userChangeDetailButton:hover {
+    background-color: rgb(65,65,65);
+}
+
+.userChangeDetailButton:active {
+    background-color: rgb(75,75,75);
+}
+
+#confirmUser, #confirmPass {
+    background-color: rgb(55,55,55);
+    border: 2px solid rgb(240,240,240);
+    border-radius: 25px;
+    font-size: 1.15vw;
+    color: rgb(240,240,240);
+    padding-left: 7.5%;
+    margin-left: 2.5%;
+    margin-right: 2.5%;
+    font-family: inherit;
+}  
 
 #newUserLaunch {
     border: 2px solid whitesmoke;
@@ -231,6 +304,11 @@ hr {
 
 #newUserCancel:active, #newUserCreate:active {
     background-color: rgb(75,75,75);
+}
+
+#newUserCreate:disabled {
+    background-color: rgb(55,0,0);
+    color: #f0f0f0;
 }
 
 .flexHorizontal {

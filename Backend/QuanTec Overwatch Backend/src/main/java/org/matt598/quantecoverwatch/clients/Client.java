@@ -314,6 +314,41 @@ public class Client extends Thread {
                                 continue;
                             }
 
+                            case "CHANGEUSERNAME" -> {
+                                // Same restrictions as deleting users: no self-destructing, must be admin or higher,
+                                // must be acting on a user at or below your permission level.
+                                if(credentialManager.getUserClass(username).ordinal() < CredentialManager.USER_CLASS.ADMINISTRATOR.ordinal()){
+                                    toClient.print(ResponseTemplates.FORBIDDEN);
+                                } else if(lines.length < 3 || lines[1].equals(username) || credentialManager.getUserClass(lines[1]) != null){
+                                    toClient.print(ResponseTemplates.BADREQ);
+                                } else if(credentialManager.getUserClass(username).ordinal() < credentialManager.getUserClass(lines[1]).ordinal()){
+                                    toClient.print(ResponseTemplates.FORBIDDEN);
+                                } else {
+                                    Logging.logInfo("[Client Events] User \""+username+"\" changed user with name \""+lines[1]+"\" to \""+lines[2]+"\".");
+                                    credentialManager.setUsername(lines[1], lines[2]);
+                                    toClient.print(ResponseTemplates.LOGOUT);
+                                }
+                                toClient.flush();
+                                continue;
+                            }
+
+                            case "CHANGEPASS" -> {
+                                // Similar to delete, but allowed by all users if the user being acted on is the same as the current user.
+                                if(credentialManager.getUserClass(username).ordinal() < CredentialManager.USER_CLASS.ADMINISTRATOR.ordinal() && !(username.equals(lines[1]))){
+                                    toClient.print(ResponseTemplates.FORBIDDEN);
+                                } else if(lines.length < 2){
+                                    toClient.print(ResponseTemplates.BADREQ);
+                                } else if(credentialManager.getUserClass(username).ordinal() < credentialManager.getUserClass(lines[1]).ordinal()){
+                                    toClient.print(ResponseTemplates.FORBIDDEN);
+                                } else {
+                                    Logging.logInfo("[Client Events] User \""+username+"\" changed password of user \""+lines[1]+"\".");
+                                    credentialManager.setPass(lines[1], lines[2]);
+                                    toClient.print(ResponseTemplates.LOGOUT);
+                                }
+                                toClient.flush();
+                                continue;
+                            }
+
                             case "GETCONTAINERS" -> {
                                 // Assemble some ad-hoc json to send the server.
                                 StringBuilder json = new StringBuilder();
