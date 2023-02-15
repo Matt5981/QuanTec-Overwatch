@@ -115,6 +115,25 @@
     font-family: 'Roboto';
 }
 
+#changeOwnPassword {
+    border: 2px solid whitesmoke;
+    border-radius: 10px;
+    height: 50px;
+    width: 100px;
+    font-family: 'Roboto';
+    color: whitesmoke;
+    background-color: rgb(55,55,55);
+    transition: 0.15s linear;
+}
+
+#changeOwnPassword:hover {
+    background-color: rgb(65,65,65);
+}
+
+#changeOwnPassword:active {
+    background-color: rgb(75,75,75);
+}
+
 #newUser {
     display: flex;
     flex-direction: column;
@@ -235,7 +254,7 @@
     background-color: rgb(75,75,75);
 }
 
-#confirmUser, #confirmPass {
+#confirmUser, #confirmPass, #oldPassword {
     background-color: rgb(55,55,55);
     border: 2px solid rgb(240,240,240);
     border-radius: 25px;

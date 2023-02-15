@@ -3,6 +3,7 @@ import { SERVER_IP } from './masterAPIAddress';
 import './settings.css';
 import './UserClassHeirarchy.js';
 import { USER_CLASSES } from './UserClassHeirarchy.js';
+import { sanitizePassword } from './passwordSanitizer.ts';
 
 // TODO this whole file contains a bunch of inefficient code. It needs to be heavily refactored before 1.0.
 
@@ -28,6 +29,11 @@ class Settings extends React.Component {
                 confirmUser: ''
             },
             changeOtherPass: {
+                password: '',
+                confirmPass: ''
+            },
+            changeOwnPass: {
+                oldPassword: '',
                 password: '',
                 confirmPass: ''
             }
@@ -104,6 +110,9 @@ class Settings extends React.Component {
             case 'changeOtherPassword':
                 this.setState({currentUserDetailChangeDialog: 'changeOtherPass'});
                 break;
+            case 'changeOwnPassword':
+                this.setState({currentUserDetailChangeDialog: 'changeOwnPass'});
+                break;
             default:
                 this.setState({currentUserDetailChangeDialog: null});
                 break;
@@ -127,13 +136,18 @@ class Settings extends React.Component {
             }
         }
 
-        if(this.state.currentUserDetailChangeDialog !== 'newUser'){
+        if(this.state.currentUserDetailChangeDialog !== 'newUser' && this.state.currentUserDetailChangeDialog !== 'changeOwnPass'){
 
             for(var key in mutated){
                 if(mutated[key] !== Object.values(mutated)[0]){
                     submitButtonState = false;
                 }
             }
+        }
+
+        if(this.state.currentUserDetailChangeDialog === 'changeOwnPass'){
+            // Make sure 'password' and 'confirmPass' are the same.
+            submitButtonState = submitButtonState && mutated.password === mutated.confirmPass;
         }
 
         this.setState({
@@ -161,13 +175,13 @@ class Settings extends React.Component {
         event.preventDefault();
         event.target.enabled = false;
 
-        // We need to do some assembly here since each of the four forms this page hosts sends a different command to the API.
+        // We need to do some assembly here since each of the four forms this page hosts sends a different command to the API. We also need to sanitize passwords since login does it.
         var reqBody;
         switch(this.state.currentUserDetailChangeDialog){
             case 'newUser':
                 reqBody = 'NEWUSER\n'+
                 this.state.newUser.username+'\n'+
-                this.state.newUser.password; 
+                sanitizePassword(this.state.newUser.password); 
                 break;
             case 'changeUsername':
                 reqBody = 'CHANGEUSERNAME\n' +
@@ -177,7 +191,11 @@ class Settings extends React.Component {
             case 'changeOtherPass':
                 reqBody = 'CHANGEPASS\n' +
                 this.state.editUserDropdown+'\n'+
-                this.state.changeOtherPass.password;
+                sanitizePassword(this.state.changeOtherPass.password);
+                break;
+            case 'changeOwnPass':
+                reqBody = 'CHANGEOWNPASS\n'+
+                JSON.stringify({oldPassword: sanitizePassword(this.state.changeOwnPass.oldPassword), newPassword: sanitizePassword(this.state.changeOwnPass.password)});
                 break;
             default:
                 reqBody = '';
@@ -186,31 +204,49 @@ class Settings extends React.Component {
         // Now that that's assembled, we also need to get ready to wipe the corresponding form's contents when this completes, since we don't want to do
         // that if it fails.
         let erasureSubjectName = this.state.currentUserDetailChangeDialog;
-        let mutated = this.state[erasureSubjectName];
+        let mutated = {
+            ...this.state[erasureSubjectName]
+        };
         
         for(var key in mutated){
             mutated[key] = '';
         }
 
         // Send new details in POST to API. Since the server might throw an error here, there needs to be handling for it (e.g. a user can try to make a user with a duplicate name, which will return 400.)
+        // We also need a custom dialog for the old password in changing one's own password returning 403, since it's likely to be encountered more then the others (which cannot happen via the UI without modifying it).
         fetch(new Request(SERVER_IP, {method: 'POST', mode: 'cors', headers: {Authorization: 'Bearer '+localStorage.getItem('btkn')}, body: reqBody})).then(
             res => {
-                if(res.status !== 204){
-                    alert('Server returned '+res.status+'. Please try again. THIS MESSAGE IS A PLACEHOLDER, AND WILL BE REPLACED SHORTLY.');
-                } else {
-                    // Fetch new user list and shove it into state, which should make the render method show our changes.
-                    fetch(new Request(SERVER_IP, {method: 'POST', mode: 'cors', headers: {Authorization: 'Bearer '+localStorage.getItem('btkn')}, body: 'GETALLUSERS'})).catch(
-                        NetworkError => this.setState({userList: null})
-                    ).then(
-                        res => {return res.json();}
-                    ).then(
-                        res => this.setState({
-                            userList: res.users,
+
+                if(this.state.currentUserDetailChangeDialog === 'changeOwnPass'){
+                    if(res.status === 403){
+                        alert('Your old password was incorrect. Please enter it again. THIS MESSAGE IS A PLACEHOLDER, AND WILL BE REPLACED SHORTLY.');
+                    } else if(res.status !== 204){
+                        alert('Server returned '+res.status+'. Please try again. THIS MESSAGE IS A PLACEHOLDER, AND WILL BE REPLACED SHORTLY.');
+                    } else {
+                        this.setState({
                             currentUserDetailChangeDialog: null,
                             shouldSubmitBeClickable: false,
                             [erasureSubjectName]: mutated
-                        })
-                    ); 
+                        });
+                    }
+                } else {
+                    if(res.status !== 204){
+                        alert('Server returned '+res.status+'. Please try again. THIS MESSAGE IS A PLACEHOLDER, AND WILL BE REPLACED SHORTLY.');
+                    } else {
+                        // Fetch new user list and shove it into state, which should make the render method show our changes.
+                        fetch(new Request(SERVER_IP, {method: 'POST', mode: 'cors', headers: {Authorization: 'Bearer '+localStorage.getItem('btkn')}, body: 'GETALLUSERS'})).catch(
+                            NetworkError => this.setState({userList: null})
+                        ).then(
+                            res => {return res.json();}
+                        ).then(
+                            res => this.setState({
+                                userList: res.users,
+                                currentUserDetailChangeDialog: null,
+                                shouldSubmitBeClickable: false,
+                                [erasureSubjectName]: mutated
+                            })
+                        ); 
+                    }
                 }
             }
         )
@@ -400,6 +436,10 @@ class Settings extends React.Component {
                                 {opt}
                             </select>
                         </div>
+                        <div className='settingIndividual'>
+                            <h2>Change Password</h2>
+                            <button id='changeOwnPassword' onClick={this.launchNewUserWizard}>Change Password...</button>
+                        </div>
                     </div>
                     {(USER_CLASSES[localStorage.getItem('usrClass')] >= USER_CLASSES['ADMINISTRATOR']) ?
                         <div className='settingsContainer'>
@@ -460,6 +500,25 @@ class Settings extends React.Component {
                             <input type='password' id='password' value={this.state.changeOtherPass.password} onChange={this.onNewUserFormChange} />
                             <label>Confirm New Password</label>
                             <input type='password' id='confirmPass' value={this.state.changeOtherPass.confirmPass} onChange={this.onNewUserFormChange} />
+                            <div className='flexHorizontal'>
+                                <button id='newUserCancel' type='button' onClick={this.onNewUserFormCancel}>Cancel</button>
+                                <hr />
+                                <input type='submit' id='newUserCreate' disabled={!this.state.shouldSubmitBeClickable} value='Change' />
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                <div className={this.state.currentUserDetailChangeDialog === 'changeOwnPass' ? 'dialogBoxContainer' : 'dialogBoxContainer hidden'}>
+                    <div className='settingsContainer'>
+                        <h1>User Settings // Change Password</h1>
+                        <h2>// You will be logged out automatically upon clicking 'Change'.</h2>
+                        <form id='newUser' onSubmit={this.onNewUserFormSubmit}>
+                            <label>Old Password</label>
+                            <input type='password' id='oldPassword' value={this.state.changeOwnPass.oldPassword} onChange={this.onNewUserFormChange} />
+                            <label>New Password</label>
+                            <input type='password' id='password' value={this.state.changeOwnPass.password} onChange={this.onNewUserFormChange} />
+                            <label>Confirm New Password</label>
+                            <input type='password' id='confirmPass' value={this.state.changeOwnPass.confirmPass} onChange={this.onNewUserFormChange} />
                             <div className='flexHorizontal'>
                                 <button id='newUserCancel' type='button' onClick={this.onNewUserFormCancel}>Cancel</button>
                                 <hr />

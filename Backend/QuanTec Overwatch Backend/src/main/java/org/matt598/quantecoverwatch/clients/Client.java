@@ -333,10 +333,10 @@ public class Client extends Thread {
                             }
 
                             case "CHANGEPASS" -> {
-                                // Similar to delete, but allowed by all users if the user being acted on is the same as the current user.
-                                if(credentialManager.getUserClass(username).ordinal() < CredentialManager.USER_CLASS.ADMINISTRATOR.ordinal() && !(username.equals(lines[1]))){
+                                // Also the same as delete, changing one's own password is done via another method.
+                                if(credentialManager.getUserClass(username).ordinal() < CredentialManager.USER_CLASS.ADMINISTRATOR.ordinal()){
                                     toClient.print(ResponseTemplates.FORBIDDEN);
-                                } else if(lines.length < 2){
+                                } else if(lines.length < 3 || username.equals(lines[1])){
                                     toClient.print(ResponseTemplates.BADREQ);
                                 } else if(credentialManager.getUserClass(username).ordinal() < credentialManager.getUserClass(lines[1]).ordinal()){
                                     toClient.print(ResponseTemplates.FORBIDDEN);
@@ -344,6 +344,62 @@ public class Client extends Thread {
                                     Logging.logInfo("[Client Events] User \""+username+"\" changed password of user \""+lines[1]+"\".");
                                     credentialManager.setPass(lines[1], lines[2]);
                                     toClient.print(ResponseTemplates.LOGOUT);
+                                }
+                                toClient.flush();
+                                continue;
+                            }
+
+                            case "CHANGEOWNPASS" -> {
+                                // This one's a bit weird, since we need to verify the old password sent in this matches the one we have on record.
+                                // We're basically using it as a poor man's nonce in this way, ensuring that a bearer token nabbed from local storage
+                                // doesn't allow the complete hijacking of an account.
+                                if(lines.length < 2){
+                                    toClient.print(ResponseTemplates.BADREQ);
+                                } else {
+                                    // Dismantle JSON in a big try-catch so we can return 400 if it's invalid. This uses the same method
+                                    // as the authenticate method. TODO strip this out into a method to de-bloat run().
+                                    try {
+                                        String oldPass, newPass; // TODO should both be char[]
+
+                                        Pattern pattern = Pattern.compile("[^{}\"\\t:,]+");
+                                        Matcher matcher = pattern.matcher(lines[1]);
+
+                                        // First match should be "oldPassword"
+                                        if (!matcher.find()) {
+                                            throw new IllegalArgumentException();
+                                        }
+                                        if (!matcher.group().equals("oldPassword")) {
+                                            throw new IllegalArgumentException();
+                                        }
+                                        // Next one is the username.
+                                        if (!matcher.find()) {
+                                            throw new IllegalArgumentException();
+                                        }
+                                        oldPass = matcher.group();
+                                        // Next one should be "password"
+                                        if (!matcher.find()) {
+                                            throw new IllegalArgumentException();
+                                        }
+                                        if (!matcher.group().equals("newPassword")) {
+                                            throw new IllegalArgumentException();
+                                        }
+                                        // Next one is the password.
+                                        if (!matcher.find()) {
+                                            throw new IllegalArgumentException();
+                                        }
+                                        newPass = matcher.group();
+
+                                        // Check details with the obtained username and oldPass. If true, change password to newPass,
+                                        // else send 403.
+                                        if (credentialManager.checkDetails(username, oldPass)) {
+                                            credentialManager.setPass(username, newPass);
+                                            toClient.print(ResponseTemplates.LOGOUT);
+                                        } else {
+                                            toClient.print(ResponseTemplates.FORBIDDEN);
+                                        }
+                                    } catch (IllegalArgumentException e) {
+                                        toClient.print(ResponseTemplates.BADREQ);
+                                    }
                                 }
                                 toClient.flush();
                                 continue;

@@ -2,6 +2,7 @@ import './Login.css';
 import React from 'react';
 import {withRouter} from './withRouter';
 import { SERVER_IP } from './panes/masterAPIAddress';
+import { sanitizePassword } from './panes/passwordSanitizer.ts';
 
 class Login extends React.Component {
 
@@ -104,7 +105,7 @@ class Login extends React.Component {
 
     let details = {
       username: this.state.username,
-      password: this.state.password,
+      password: sanitizePassword(this.state.password)
     }
 
     // Manually form login credentials temporarily, as setState isn't instant (We still set it here to make use of it later, after we've confirmed it's valid).
