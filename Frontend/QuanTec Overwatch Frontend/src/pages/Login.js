@@ -211,8 +211,8 @@ class Login extends React.Component {
             }
             sessionStorage.setItem('id', id);
             // FIXME change back!
-            window.location.href = 'https://discord.com/oauth2/authorize?response_type=code&client_id=1075308298049437726&scope=identify&state=' + id + '&redirect_uri=http%3A%2F%2Flocalhost:3000&prompt=consent'; // '&redirect_uri=https%3A%2F%2Fthegaff.dev&prompt=consent'
-            }}>Login with Discord...</button>
+            window.location.href = 'https://discord.com/oauth2/authorize?response_type=code&client_id=1075308298049437726&scope=identify%20guilds&state=' + id + '&redirect_uri=http%3A%2F%2Flocalhost:3000&prompt=consent'; // '&redirect_uri=https%3A%2F%2Fthegaff.dev&prompt=consent'
+            }}>Login with Discord</button>
         </div>
         <video preload='true' autoPlay={this.state.killScreen} loop='true' className={this.state.killScreen ? null : 'disabled'}>
           <source src="https://cdn.discordapp.com/attachments/802032518421151774/1071296286675959849/theKing.mp4" type="video/mp4" />

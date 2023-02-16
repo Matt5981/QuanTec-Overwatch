@@ -283,6 +283,7 @@ public class Client extends Thread {
                                 // and the line after that is the new class. Users cannot promote anybody to a class
                                 // higher than they are, and users cannot set the class of anybody with a higher
                                 // permission level than them.
+                                // TODO add check for SSO users, at the moment this just silently fails on them.
                                 if(credentialManager.getUserClass(username).ordinal() < CredentialManager.USER_CLASS.ADMINISTRATOR.ordinal()){
                                     toClient.print(ResponseTemplates.FORBIDDEN);
                                 } else if(lines.length < 3){

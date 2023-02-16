@@ -1,16 +1,15 @@
 package org.matt598.quantecoverwatch.credentials;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.matt598.quantecoverwatch.utils.Logging;
 import org.matt598.quantecoverwatch.utils.fetch.Fetch;
 import org.matt598.quantecoverwatch.utils.fetch.Response;
 
 // New thing I learnt: Apparently Java implicitly imports any classes that are in the same package as the current class,
 // meaning that we don't need to import the credentialSet or BearerToken objects here. Cool!
-import javax.net.ssl.HttpsURLConnection;
 import java.io.*;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.util.*;
 import java.util.regex.Matcher;
@@ -27,10 +26,7 @@ public class CredentialManager {
     private final String filename;
     private final String discordOAuthSecret;
     private final String discordOAuthPublic;
-    private static final String discordBaseLink = "https://discord.com";
-    private static final String discordTokenEndpoint = "https://discord.com/api/v10/oauth2/token";
-    private static final String discordUserInfoEndpoint = "https://discord.com/api/v10/users/@me";
-    private static final String discordRevokeEndpoint = "https://discord.com/api/v10/oauth2/token/revoke";
+    private final String discordOverrideServer;
 
     public enum USER_CLASS {
         STANDARD,
@@ -48,10 +44,11 @@ public class CredentialManager {
         return pass.toString();
     }
 
-    public CredentialManager(String filename, Random random, String discordOAuthPublic, String discordOAuthSecret){
+    public CredentialManager(String filename, Random random, String discordOAuthPublic, String discordOAuthSecret, String discordOverrideServer){
         this.filename = filename;
         this.discordOAuthPublic = discordOAuthPublic;
         this.discordOAuthSecret = discordOAuthSecret;
+        this.discordOverrideServer = discordOverrideServer;
         // Attempt to read the list in from a file.
         try(ObjectInputStream inputStream = new ObjectInputStream(new FileInputStream(filename))) {
             List<?> in = (List<?>)inputStream.readObject();
@@ -201,6 +198,19 @@ public class CredentialManager {
             return null;
         }
 
+        // Also store the user's guilds, we might need them later.
+        Response guildsAtMe = Fetch.discordGetGuilds(usrBtkn);
+
+        if(guildsAtMe == null){
+            Logging.logWarning("Fetch for Discord user guild information returned null.");
+            return null;
+        }
+
+        if(guildsAtMe.getResponseCode() != 200){
+            Logging.logWarning("Discord /users/@me/guilds returned "+usersAtMe.getResponseCode()+" "+usersAtMe.getResponseMessage()+".");
+            return null;
+        }
+
         // We're just looking for the 'id' field, so we can compare it to the account associated with our account.
         Pattern idPtn = Pattern.compile("[^{}\"\\t :,]+");
         Matcher idRes = idPtn.matcher(usersAtMe.getResponse());
@@ -236,12 +246,38 @@ public class CredentialManager {
         // FINALLY we can actually check if any credential sets have a discord user snowflake associated with the one we've
         // got. If we don't find one, return null, else generate a bearer token for that user and return it along with their
         // username.
-        System.out.println("Checkpoint!");
         for (CredentialSet set : credentialList) {
             if (set.getDiscordAccount().equals(id)) {
                 // Hit!
                 return new String[]{set.getUsername(), createBearerToken(set.getUsername())};
             }
+        }
+
+        // If we made it this far then we would usually fail. But, if we have an override guild set, then we
+        // need to work out if the user is a member of said guild. If they are, generate a SSO-only user (locked to no permissions)
+        // and approve the sign in.
+        // I was particularly tired when doing this, so I have done the unforgivable... Destroyed my own morals and used...
+        // A DEPENDENCY.
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            List<Map<String,Object>> guilds = mapper.readValue(guildsAtMe.getResponse(), new TypeReference<>() {});
+
+            for(Map<String,Object> keyval : guilds){
+                if(keyval.get("id") != null && keyval.get("id").equals(discordOverrideServer)){
+                    // It's a hit! Make new user and send back details.
+                    // We'll need to grab the user's name and discriminator to do this, which are conveniently still in memory.
+                    Map<String,String> usrInfo = mapper.readValue(usersAtMe.getResponse(), new TypeReference<>() {});
+                    String fullName = usrInfo.get("username") + "#" + usrInfo.get("discriminator");
+                    credentialList.add(new CredentialSet(fullName, id));
+                    Logging.logInfo("[Credential Manager] New SSO-Only user created, with username \""+fullName+"\" due to membership in override server.");
+                    return new String[]{fullName, createBearerToken(fullName)};
+                }
+            }
+
+        } catch (JsonProcessingException e) {
+            // Ignored, we'll return null if this happens.
+            Logging.logWarning("Exception thrown by Jackson while processing guilds. Printing stack trace:");
+            e.printStackTrace();
         }
 
 
@@ -315,9 +351,17 @@ public class CredentialManager {
         return null;
     }
 
+    /** <h2>setUserClass</h2>
+     * Updates the user class of a user. Returns without doing anything if attempted on an SSO-only account.
+     * @param username The username of the account whose class will be changed.
+     * @param userClass The new class of the account.
+     */
     public void setUserClass(String username, USER_CLASS userClass){
         for(CredentialSet set : credentialList){
             if(set.getUsername().equals(username)){
+                if(set.getType() == CredentialSet.Types.OVERRIDE){
+                    return;
+                }
                 set.setUserClass(userClass);
                 credentialSetMutatorHandler(username);
                 return;

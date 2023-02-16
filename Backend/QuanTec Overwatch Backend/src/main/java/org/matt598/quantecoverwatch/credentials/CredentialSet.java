@@ -11,6 +11,11 @@ import java.security.spec.KeySpec;
 import java.util.Base64;
 
 public class CredentialSet implements Serializable {
+
+    public enum Types {
+        STANDARD,
+        OVERRIDE
+    }
     @Serial
     private static final long serialVersionUID = 1L;
 
@@ -21,6 +26,7 @@ public class CredentialSet implements Serializable {
     private CredentialManager.USER_CLASS userClass;
     private String userConfig;
     private String discordAccount;
+    private Types type;
 
     // Magic numbers
     private final transient int SALT_SIZE = 16;
@@ -49,6 +55,7 @@ public class CredentialSet implements Serializable {
         this.userClass = userClass;
         this.userConfig = DEFAULT_USR_CONFIG;
         this.discordAccount = "";
+        this.type = Types.STANDARD;
         String salt_tmp = null, hash_tmp = null;
         try {
             SecureRandom random = SecureRandom.getInstanceStrong();
@@ -68,6 +75,17 @@ public class CredentialSet implements Serializable {
         this.salt = salt_tmp;
     }
 
+    public CredentialSet(String discordName, String discordAccount){
+        // Override account.
+        this.username = discordName;
+        this.userClass = CredentialManager.USER_CLASS.STANDARD;
+        this.userConfig = DEFAULT_USR_CONFIG;
+        this.discordAccount = discordAccount;
+        this.type = Types.OVERRIDE;
+        this.hash = null;
+        this.salt = null;
+    }
+
     public String getUsername(){
         return this.username;
     }
@@ -76,11 +94,18 @@ public class CredentialSet implements Serializable {
         this.username = username;
     }
 
+    public Types getType() {
+        return type;
+    }
+
     public CredentialManager.USER_CLASS getUserClass(){
         return this.userClass;
     }
 
     public void setUserClass(CredentialManager.USER_CLASS userClass){
+        if(this.type == Types.OVERRIDE){
+            throw new IllegalStateException("Override users cannot change class.");
+        }
         this.userClass = userClass;
     }
 
@@ -119,12 +144,20 @@ public class CredentialSet implements Serializable {
 
             this.salt = Base64.getEncoder().encodeToString(salt);
             this.hash = Base64.getEncoder().encodeToString(factory.generateSecret(spec).getEncoded());
+
+            if(this.type == Types.OVERRIDE){
+                this.type = Types.STANDARD; // Promote to standard account since it now has a password.
+            }
         } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
             e.printStackTrace();
         }
     }
 
     public boolean authenticate(String password){
+        // Doesn't work on override accounts, they're SSO only.
+        if(this.type == Types.OVERRIDE){
+            return false;
+        }
         // Hash with our salt and check.
         try {
             KeySpec spec = new PBEKeySpec(password.toCharArray(), Base64.getDecoder().decode(this.salt), ITERATIONS, KEY_LEN);

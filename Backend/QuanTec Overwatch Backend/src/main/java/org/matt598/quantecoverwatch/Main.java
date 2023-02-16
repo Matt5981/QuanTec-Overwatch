@@ -33,7 +33,7 @@ public class Main {
 
         // First (and only) argument should be the Discord OAuth token. If not provided, we'll automatically return 500 for
         // OAuth requests via Discord.
-        String discordOAuthSecret = null, discordOAuthPublic = null;
+        String discordOAuthSecret = null, discordOAuthPublic = null, discordOverrideServer = null;
         if(args.length > 1){
             discordOAuthPublic = args[0];
             discordOAuthSecret = args[1];
@@ -41,10 +41,15 @@ public class Main {
             Logging.logError("Discord OAuth client id/secret not provided. Signing in with Discord will be disabled until the server is restarted and provided with this.");
         }
 
+        if(args.length > 2){
+            discordOverrideServer = args[2];
+            Logging.logWarning("Override server provided. Any member of the provided server is able to log into the webapp. PUBLIC ACCESS IS ENABLED.");
+        }
+
         Random random = new Random();
 
         // Make credentials manager to handle authentication stuff for us.
-        CredentialManager credentialManager = new CredentialManager(USER_CREDENTIAL_FILE, random, discordOAuthPublic, discordOAuthSecret);
+        CredentialManager credentialManager = new CredentialManager(USER_CREDENTIAL_FILE, random, discordOAuthPublic, discordOAuthSecret, discordOverrideServer);
 
         List<Client> clientList = new LinkedList<>();
 
