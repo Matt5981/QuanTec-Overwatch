@@ -31,6 +31,7 @@ public class ResponseTemplates {
     }
 
     // Retain 'Connection: Keep-Alive' in case the user wants to re-authenticate.
+    // TODO rename, something like "GenericNoContent"
     public static String LOGOUT =
             "HTTP/1.1 204 No Content\r\n" +
                     STDHEADERS +
