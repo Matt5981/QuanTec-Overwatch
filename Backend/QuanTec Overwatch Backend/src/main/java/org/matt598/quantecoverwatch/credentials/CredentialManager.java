@@ -1,15 +1,20 @@
 package org.matt598.quantecoverwatch.credentials;
 
 import org.matt598.quantecoverwatch.utils.Logging;
+import org.matt598.quantecoverwatch.utils.fetch.Fetch;
+import org.matt598.quantecoverwatch.utils.fetch.Response;
 
 // New thing I learnt: Apparently Java implicitly imports any classes that are in the same package as the current class,
 // meaning that we don't need to import the credentialSet or BearerToken objects here. Cool!
+import javax.net.ssl.HttpsURLConnection;
 import java.io.*;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class CredentialManager {
     private List<CredentialSet> credentialList;
@@ -20,6 +25,12 @@ public class CredentialManager {
     private static final int TOKEN_LIFETIME = 3600; // FIXME 1 Hour, should be 1 day.
     private final Random random;
     private final String filename;
+    private final String discordOAuthSecret;
+    private final String discordOAuthPublic;
+    private static final String discordBaseLink = "https://discord.com";
+    private static final String discordTokenEndpoint = "https://discord.com/api/v10/oauth2/token";
+    private static final String discordUserInfoEndpoint = "https://discord.com/api/v10/users/@me";
+    private static final String discordRevokeEndpoint = "https://discord.com/api/v10/oauth2/token/revoke";
 
     public enum USER_CLASS {
         STANDARD,
@@ -37,8 +48,10 @@ public class CredentialManager {
         return pass.toString();
     }
 
-    public CredentialManager(String filename, Random random){
+    public CredentialManager(String filename, Random random, String discordOAuthPublic, String discordOAuthSecret){
         this.filename = filename;
+        this.discordOAuthPublic = discordOAuthPublic;
+        this.discordOAuthSecret = discordOAuthSecret;
         // Attempt to read the list in from a file.
         try(ObjectInputStream inputStream = new ObjectInputStream(new FileInputStream(filename))) {
             List<?> in = (List<?>)inputStream.readObject();
@@ -127,6 +140,113 @@ public class CredentialManager {
             }
         }
         return false;
+    }
+
+    /** <h2>Discord OAuth Token Exchange</h2>
+     * Performs an OAuth token exchange with Discord's API, returning a bearer token that clients can use to connect.
+     * As a note, this ONLY uses the Discord token to check the user's snowflake, as to compare it to existing credential sets.
+     * The token is not stored, not kept alive, and is replaced by our own.
+     * @param code The OAuth code given by Discord's OAuth authorization link.
+     * @return A string array containing the username of the user at the zeroth index and the bearer token at the first. If authentication fails for any reason, this will instead return <code>null</code>.
+     */
+    public String[] discordOAuthTokenExchange(String code){
+        if (discordOAuthSecret == null || discordOAuthPublic == null) {
+            return null;
+        }
+        // Compile POST to send to Discord.
+        // FIXME this needs to be changed to the actual domain before merging into main!
+        Response tokenEx = Fetch.DiscordTokenExchange(discordOAuthPublic, discordOAuthSecret, code, "http://localhost:3000");
+        if(tokenEx == null){
+            Logging.logWarning("Fetch for Discord OAuth token exchange returned null.");
+            return null;
+        }
+
+        // If response is 200, get user's snowflake.
+        if(tokenEx.getResponseCode() != 200){
+            Logging.logWarning("Discord OAuth token exchange returned "+tokenEx.getResponseCode()+" "+tokenEx.getResponseMessage()+".");
+            return null;
+        }
+
+        // Strip bearer token from response.
+        Pattern btknResp = Pattern.compile("[^{}\"\\t :,]+");
+        Matcher btknRes = btknResp.matcher(tokenEx.getResponse());
+
+        if(!btknRes.find()){
+            Logging.logWarning("Malformed response received from Discord OAuth token exchange: Regex failed to find match 1.");
+            return null;
+        }
+
+        if(!btknRes.group().equals("access_token")){
+            Logging.logWarning("Malformed response received from Discord OAuth token exchange: First match was not \"access_token\".");
+            return null;
+        }
+
+        if(!btknRes.find()){
+            Logging.logWarning("Malformed response received from Discord OAuth token exchange: Regex failed to find match 2.");
+            return null;
+        }
+
+        String usrBtkn = btknRes.group();
+
+        // GET /api/users/@me, from which we should yield a user object.
+        Response usersAtMe = Fetch.DiscordGetUser(usrBtkn);
+
+        if(usersAtMe == null){
+            Logging.logWarning("Fetch for Discord user information returned null.");
+            return null;
+        }
+
+        if(usersAtMe.getResponseCode() != 200){
+            Logging.logWarning("Discord /users/@me returned "+usersAtMe.getResponseCode()+" "+usersAtMe.getResponseMessage()+".");
+            return null;
+        }
+
+        // We're just looking for the 'id' field, so we can compare it to the account associated with our account.
+        Pattern idPtn = Pattern.compile("[^{}\"\\t :,]+");
+        Matcher idRes = idPtn.matcher(usersAtMe.getResponse());
+
+        if(!idRes.find()){
+            Logging.logWarning("Malformed response received from Discord User Object: Regex failed to find match 1.");
+            return null;
+        }
+
+        if(!idRes.group().equals("id")){
+            Logging.logWarning("Malformed response received from Discord User Object: First match was not \"id\".");
+            return null;
+        }
+
+        if(!idRes.find()){
+            Logging.logWarning("Malformed response received from Discord User Object: Regex failed to find match 2.");
+            return null;
+        }
+
+        String id = idRes.group();
+
+        // Revoke the token now that we have that in memory.
+        Response revoke = Fetch.DiscordTokenRevoke(usrBtkn, discordOAuthPublic, discordOAuthSecret);
+        if(revoke == null){
+            Logging.logWarning("Fetch for Discord token revocation returned null.");
+            return null;
+        }
+        if(revoke.getResponseCode() != 200) {
+            Logging.logWarning("Revoking a Discord OAuth token returned "+revoke.getResponseCode()+" "+revoke.getResponseMessage()+".");
+            return null;
+        }
+
+        // FINALLY we can actually check if any credential sets have a discord user snowflake associated with the one we've
+        // got. If we don't find one, return null, else generate a bearer token for that user and return it along with their
+        // username.
+        System.out.println("Checkpoint!");
+        for (CredentialSet set : credentialList) {
+            if (set.getDiscordAccount().equals(id)) {
+                // Hit!
+                return new String[]{set.getUsername(), createBearerToken(set.getUsername())};
+            }
+        }
+
+
+        Logging.logInfo("[Credential Manager] Discord SSO attempted by unknown user.");
+        return null;
     }
 
     /** <h2>setUsername</h2>
@@ -225,6 +345,27 @@ public class CredentialManager {
             }
         }
         Logging.logWarning("[CredentialManager] setUserPrefs method failed due to credential set for user not being found.");
+    }
+
+    public String getDiscordID(String username){
+        for(CredentialSet set : credentialList){
+            if(set.getUsername().equals(username)){
+                return set.getDiscordAccount();
+            }
+        }
+        Logging.logWarning("[CredentialManager] getDiscordID method returned null due to credential set for user not being found.");
+        return null;
+    }
+
+    public void setDiscordID(String username, String discordID){
+        for(CredentialSet set : credentialList){
+            if(set.getUsername().equals(username)){
+                set.setDiscordAccount(discordID);
+                credentialSetMutatorHandler();
+                return;
+            }
+        }
+        Logging.logWarning("[CredentialManager] setDiscordID method failed due to credential set for user not being found.");
     }
 
     public Long getUserLastLogin(String username){

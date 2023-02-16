@@ -30,7 +30,7 @@
   display: flex;
   flex-direction: column;
   text-align: left;
-  height: 80%;
+  height: 60%;
 }
 
 #login > * {
@@ -61,7 +61,7 @@
   border: 2px solid rgb(240,240,240);
   border-radius: 25px;
   flex-grow: 1 1;
-  margin-top: 25%;
+  margin-top: 20%;
   margin-left: 5%;
   margin-right: 5%;
   transition: 0.15s;
@@ -86,6 +86,28 @@
 #title {
   height: 15%;
   margin-top: 5%;
+}
+
+.discordOAuthLaunch {
+  background-color: rgb(70,72,238);
+  color: whitesmoke;
+  border: 0;
+  border-radius: 10px;
+  font-family: 'Courier New';
+  font-weight: 700;
+  font-size: 0.70vw;
+  padding: 10px;
+  margin-top: 5%;
+  width: 60%;
+  height: 7.5%;
+}
+
+.discordOAuthLaunch:hover {
+  background-color: rgb(54,58,183);
+}
+
+.discordOAuthLaunch:active {
+  background-color: rgb(46,48,148);
 }
 
 .loginReferralReason {

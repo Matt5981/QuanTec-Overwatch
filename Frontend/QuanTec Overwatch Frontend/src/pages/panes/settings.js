@@ -14,6 +14,8 @@ class Settings extends React.Component {
         
         this.state = {
             settings: JSON.parse(localStorage.getItem('usrSettings')),
+            authorizedDiscordAcc: null,
+            discordAccSaveInProgress: 0,
             userList: undefined,
             shouldSavingBeVisible: false,
             shouldNewUserDialogBeVisible: false,
@@ -48,6 +50,14 @@ class Settings extends React.Component {
         this.onUserClassChange = this.onUserClassChange.bind(this);
         this.onUserDelete = this.onUserDelete.bind(this);
         this.onUserEditClick = this.onUserEditClick.bind(this);
+        this.onDiscordAccEdit = this.onDiscordAccEdit.bind(this);
+
+        // Grab discord account ID.
+        fetch(new Request(SERVER_IP, {method: 'POST', mode: 'cors', headers: {Authorization: 'Bearer '+localStorage.getItem('btkn')}, body: 'GETDISCORDID'})).then(
+            res => {return res.json();}
+        ).then(
+            res => {this.setState({authorizedDiscordAcc: res.id});}
+        )
         
         // This fetch is admin-only, so we need to check it before we get the userlist, otherwise it fills the console with errors since the API will return 403.
         if(USER_CLASSES[localStorage.getItem('usrClass')] >= USER_CLASSES['ADMINISTRATOR']){
@@ -326,6 +336,33 @@ class Settings extends React.Component {
         });
     }
 
+    onDiscordAccEdit(event){
+
+        // setState and actually act on it once it finishes.
+        this.setState({
+            authorizedDiscordAcc: event.target.value,
+        },
+        () => {
+            // If inProgress is 1 already, don't touch it. If it's zero or two,
+            // set to one and begin the three second countdown to saving it.
+            if(this.state.discordAccSaveInProgress !== 1){
+                this.setState({discordAccSaveInProgress: 1})
+                setTimeout(() => {
+                    fetch(SERVER_IP, {method: 'POST', mode: 'cors', headers: {Authorization: 'Bearer '+localStorage.getItem('btkn')}, body: 'SETDISCORDID\n'+(this.state.authorizedDiscordAcc === '' ? 'null' : this.state.authorizedDiscordAcc)}).then(
+                        res => {
+                            if(res.status === 204){
+                                this.setState({
+                                    discordAccSaveInProgress: 2,
+                                })
+                            }
+                        }
+                    )
+                }, 3000);
+            }
+        });
+
+    }
+
     render(){
 
         if(!this.props.enabled){
@@ -435,6 +472,10 @@ class Settings extends React.Component {
                             <select id='storageDisplayAccuracySelect' value={this.state.settings.strAcc} onChange={this.onSettingsUpdate}>
                                 {opt}
                             </select>
+                        </div>
+                        <div className='settingIndividual'>
+                            <h2>Authorized Discord Account</h2>
+                            <input type='text' onChange={this.onDiscordAccEdit} className={this.state.discordAccSaveInProgress === 0 ? 'discordAccEntry' : this.state.discordAccSaveInProgress === 1 ? 'discordAccEntry discordAccEntryCooldown' : 'discordAccEntry discordAccEntryFinished'} value={this.state.authorizedDiscordAcc} />
                         </div>
                         <div className='settingIndividual'>
                             <h2>Change Password</h2>

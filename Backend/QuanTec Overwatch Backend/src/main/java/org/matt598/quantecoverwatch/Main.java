@@ -31,19 +31,20 @@ public class Main {
         System.out.println("\u001b[0;1mQuanTec Info Backend "+VERSION+". Programmed by Matt598, 2023.\u001b[0m");
         Logging.logInfo("[System] Starting...");
 
-        Random random = new Random();
-        // Keystore filename and password are the first and second arguments. We as such need to do some checks here.
-//        if(args.length < 2){
-//            Logging.logFatal("[System] Expected at least two arguments, got "+args.length+".");
-//            System.exit(1);
-//        }
+        // First (and only) argument should be the Discord OAuth token. If not provided, we'll automatically return 500 for
+        // OAuth requests via Discord.
+        String discordOAuthSecret = null, discordOAuthPublic = null;
+        if(args.length > 1){
+            discordOAuthPublic = args[0];
+            discordOAuthSecret = args[1];
+        } else {
+            Logging.logError("Discord OAuth client id/secret not provided. Signing in with Discord will be disabled until the server is restarted and provided with this.");
+        }
 
-        // final String KEYSTORE_FILENAME = args[0];
-        // Charseq the second one.
-        // final char[] KEYSTORE_PASSWORD = args[1].toCharArray();
+        Random random = new Random();
 
         // Make credentials manager to handle authentication stuff for us.
-        CredentialManager credentialManager = new CredentialManager(USER_CREDENTIAL_FILE, random);
+        CredentialManager credentialManager = new CredentialManager(USER_CREDENTIAL_FILE, random, discordOAuthPublic, discordOAuthSecret);
 
         List<Client> clientList = new LinkedList<>();
 
@@ -51,45 +52,11 @@ public class Main {
         service.scheduleAtFixedRate(new ClientReaper(clientList), 60, 60, TimeUnit.SECONDS);
 
         try(ServerSocket serverSocket = new ServerSocket(8443)) {
-
-            // I DID NOT WRITE THIS CODE - adapted from https://stackoverflow.com/questions/53323855/sslserversocket-and-certificate-setup
-
-//            KeyStore trustStore = KeyStore.getInstance(KeyStore.getDefaultType());
-//            InputStream tstore = Main.class
-//                    .getResourceAsStream("/keystore/" + KEYSTORE_FILENAME);
-//            trustStore.load(tstore, KEYSTORE_PASSWORD);
-//            if (tstore != null) {
-//                tstore.close();
-//            }
-//            TrustManagerFactory tmf = TrustManagerFactory
-//                    .getInstance(TrustManagerFactory.getDefaultAlgorithm());
-//            tmf.init(trustStore);
-//
-//            KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
-//            InputStream kstore = Main.class
-//                    .getResourceAsStream("/keystore/" + KEYSTORE_FILENAME);
-//            keyStore.load(kstore, KEYSTORE_PASSWORD);
-//            KeyManagerFactory kmf = KeyManagerFactory
-//                    .getInstance(KeyManagerFactory.getDefaultAlgorithm());
-//            kmf.init(keyStore, KEYSTORE_PASSWORD);
-//            SSLContext ctx = SSLContext.getInstance("TLS");
-//            ctx.init(kmf.getKeyManagers(), tmf.getTrustManagers(),
-//                    SecureRandom.getInstanceStrong());
-
-            // END OF COPIED CODE
-
-            // SSLServerSocket serverSocket = (SSLServerSocket) ctx.getServerSocketFactory().createServerSocket(PORT);
-
-            // Restrict to TLS v1.3.
-            //serverSocket.setEnabledProtocols(new String[]{"TLSv1.3"});
-            //serverSocket.setNeedClientAuth(false);
             // Accept new connections on loop. Client requests are handled in threads. TODO report thread usage on app itself.
             Logging.logInfo(String.format("[System] Started, listening on %d/tcp.", PORT));
-
             while(true){
                 clientList.add(new Client(serverSocket.accept(), credentialManager));
             }
-
         } catch (SocketException e){
             Logging.logInfo("SocketException thrown, assuming shutdown requested.");
         } catch (IOException e){

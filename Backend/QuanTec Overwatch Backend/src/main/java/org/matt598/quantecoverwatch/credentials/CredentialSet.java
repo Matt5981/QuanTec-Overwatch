@@ -20,6 +20,7 @@ public class CredentialSet implements Serializable {
     private long lastLogin;
     private CredentialManager.USER_CLASS userClass;
     private String userConfig;
+    private String discordAccount;
 
     // Magic numbers
     private final transient int SALT_SIZE = 16;
@@ -47,6 +48,7 @@ public class CredentialSet implements Serializable {
         this.username = username;
         this.userClass = userClass;
         this.userConfig = DEFAULT_USR_CONFIG;
+        this.discordAccount = "";
         String salt_tmp = null, hash_tmp = null;
         try {
             SecureRandom random = SecureRandom.getInstanceStrong();
@@ -96,6 +98,14 @@ public class CredentialSet implements Serializable {
 
     public void setLastLogin(long lastLogin){
         this.lastLogin = lastLogin;
+    }
+
+    public String getDiscordAccount(){
+        return this.discordAccount;
+    }
+
+    public void setDiscordAccount(String discordAccount){
+        this.discordAccount = discordAccount;
     }
 
     // FIXME improper password handling, type should be char[]

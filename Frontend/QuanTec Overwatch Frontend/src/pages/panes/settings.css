@@ -134,6 +134,26 @@
     background-color: rgb(75,75,75);
 }
 
+.discordAccEntry {
+    border: 2px solid whitesmoke;
+    border-radius: 10px;
+    padding: 5px;
+    min-width: 18%;
+    background-color: rgb(55,55,55);
+    color: whitesmoke;
+    font-family: 'Courier New';
+    font-size: 1vw;
+    transition: 0.15s;
+}
+
+.discordAccEntryCooldown {
+    border: 2px solid rgb(255,32,32);
+}
+
+.discordAccEntryFinished {
+    border: 2px solid limegreen;
+}
+
 #newUser {
     display: flex;
     flex-direction: column;

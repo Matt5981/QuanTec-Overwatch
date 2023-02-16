@@ -8,6 +8,7 @@ import org.matt598.quantecoverwatch.utils.ResponseTemplates;
 
 import java.io.*;
 import java.net.Socket;
+import java.sql.SQLOutput;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -215,6 +216,24 @@ public class Client extends Thread {
                                     continue;
                                 }
                                 credentialManager.setUserPrefs(username, lines[1]);
+                                toClient.print(ResponseTemplates.LOGOUT);
+                                toClient.flush();
+                                continue;
+                            }
+
+                            case "GETDISCORDID" -> {
+                                toClient.print(ResponseTemplates.genericJSON("{\"id\":\"" + credentialManager.getDiscordID(username) + "\"}"));
+                                toClient.flush();
+                                continue;
+                            }
+
+                            case "SETDISCORDID" -> {
+                                if(lines.length < 2){
+                                    toClient.print(ResponseTemplates.BADREQ);
+                                    toClient.flush();
+                                    continue;
+                                }
+                                credentialManager.setDiscordID(username, lines[1]);
                                 toClient.print(ResponseTemplates.LOGOUT);
                                 toClient.flush();
                                 continue;
@@ -559,60 +578,113 @@ public class Client extends Thread {
     private void authenticate(String content){
         // TODO check https://xkcd.com/327/
 
-        // We should have a chunk of JSON in content. We'll process it assuming nothing is wrong, and then deal with
-        // the copious amount of potential exceptions by sending 401 if it's invalid.
-        String username, password;
+        // We should have a chunk of JSON in content. This could either be an OAuth code or a username and password.
+        // Check the JSON. If it starts with " {"code" " then it's an OAuth code, else it's username/password.
+        if(content.startsWith("{\"code\":")){
+            // This should have both an OAuth code and a "method" field telling us which SSO platform to use.
+            // We'll need to pull both, which because this is JSON is done in the same way as below.
+            try {
+                Pattern pattern = Pattern.compile("[^{}\"\\t:,]+");
+                Matcher matcher = pattern.matcher(content);
 
-        // TODO optimal default lifetime of token?
-        try {
-            // Username and password should both be strings following their respective tags.
-            Pattern pattern = Pattern.compile("[^{}\"\\t:,]+");
-            Matcher matcher = pattern.matcher(content);
+                if (!matcher.find()) {
+                    throw new IllegalArgumentException();
+                }
+                if (!matcher.group().equals("code")) {
+                    throw new IllegalArgumentException();
+                }
+                // Next one is the username.
+                if (!matcher.find()) {
+                    throw new IllegalArgumentException();
+                }
+                String OAuthCode = matcher.group();
+                // Next one should be "password"
+                if (!matcher.find()) {
+                    throw new IllegalArgumentException();
+                }
+                if (!matcher.group().equals("method")) {
+                    throw new IllegalArgumentException();
+                }
+                // Next one is the password.
+                if (!matcher.find()) {
+                    throw new IllegalArgumentException();
+                }
+                String OAuthMethod = matcher.group();
 
-            // First match should be "username", if not throw an IllegalArgumentException to run the 401.
-            if(!matcher.find()){
-                throw new IllegalArgumentException();
-            }
-            if(!matcher.group().equals("username")){
-                throw new IllegalArgumentException();
-            }
-            // Next one is the username.
-            if(!matcher.find()){
-                throw new IllegalArgumentException();
-            }
-            username = matcher.group();
-            // Next one should be "password"
-            if(!matcher.find()){
-                throw new IllegalArgumentException();
-            }
-            if(!matcher.group().equals("password")){
-                throw new IllegalArgumentException();
-            }
-            // Next one is the password.
-            if(!matcher.find()){
-                throw new IllegalArgumentException();
-            }
-            password = matcher.group();
+                String[] OAuthResponse = null;
+                // Ignore the warning that your IDE/linter is likely giving here, it's a switch to allow for more methods to be added later, should
+                // the need arise.
+                switch(OAuthMethod){
+                    case "discord" -> OAuthResponse = credentialManager.discordOAuthTokenExchange(OAuthCode);
+                }
 
-            // Now that we have those two, retrieve the salt for this user's hash, hash the given password and check it.
-            // Or just call a method that does it all for me, so I can de-bloat this class.
-            if(credentialManager.checkDetails(username, password)){
-                // Generate bearer token and send it back to the client. Update the client's 'lastLogin' value.
-                credentialManager.setUserLastLogin(username, System.currentTimeMillis()/1000);
-                String resp = credentialManager.createBearerToken(username);
-                toClient.print(ResponseTemplates.ValidAuthRequest(resp));
-                toClient.flush();
-            } else {
+                if(OAuthResponse == null){
+                    toClient.print(ResponseTemplates.UNAUTH);
+                    toClient.flush();
+                } else {
+                    // Send OK with a bunch of JSON.
+                    toClient.print(ResponseTemplates.genericJSON("{\"username\":\"" + OAuthResponse[0] + "\",\"token\":\"" + OAuthResponse[1] + "\"}"));
+                    toClient.flush();
+                }
+            } catch (NullPointerException | IllegalArgumentException e) {
                 // Send 401
                 toClient.print(ResponseTemplates.UNAUTH);
                 toClient.flush();
             }
+        } else {
+            String username, password;
+
+            // TODO optimal default lifetime of token?
+            try {
+                // Username and password should both be strings following their respective tags.
+                Pattern pattern = Pattern.compile("[^{}\"\\t:,]+");
+                Matcher matcher = pattern.matcher(content);
+
+                // First match should be "username", if not throw an IllegalArgumentException to run the 401.
+                if (!matcher.find()) {
+                    throw new IllegalArgumentException();
+                }
+                if (!matcher.group().equals("username")) {
+                    throw new IllegalArgumentException();
+                }
+                // Next one is the username.
+                if (!matcher.find()) {
+                    throw new IllegalArgumentException();
+                }
+                username = matcher.group();
+                // Next one should be "password"
+                if (!matcher.find()) {
+                    throw new IllegalArgumentException();
+                }
+                if (!matcher.group().equals("password")) {
+                    throw new IllegalArgumentException();
+                }
+                // Next one is the password.
+                if (!matcher.find()) {
+                    throw new IllegalArgumentException();
+                }
+                password = matcher.group();
+
+                // Now that we have those two, retrieve the salt for this user's hash, hash the given password and check it.
+                // Or just call a method that does it all for me, so I can de-bloat this class.
+                if (credentialManager.checkDetails(username, password)) {
+                    // Generate bearer token and send it back to the client. Update the client's 'lastLogin' value.
+                    credentialManager.setUserLastLogin(username, System.currentTimeMillis() / 1000);
+                    String resp = credentialManager.createBearerToken(username);
+                    toClient.print(ResponseTemplates.ValidAuthRequest(resp));
+                    toClient.flush();
+                } else {
+                    // Send 401
+                    toClient.print(ResponseTemplates.UNAUTH);
+                    toClient.flush();
+                }
 
 
-        } catch (NullPointerException | IllegalArgumentException e){
-            // Send 401
-            toClient.print(ResponseTemplates.UNAUTH);
-            toClient.flush();
+            } catch (NullPointerException | IllegalArgumentException e) {
+                // Send 401
+                toClient.print(ResponseTemplates.UNAUTH);
+                toClient.flush();
+            }
         }
     }
 }
