@@ -3,7 +3,6 @@
 // This code wraps class components in a function component, which allows the use of the navigate and useEffect functions
 // from react-router and react respectively inside class components.
 import { useNavigate } from 'react-router-dom';
-import { useEffect } from 'react';
 
 export const withRouter = (Component) => {
     const Wrapper = (props) => {
@@ -12,7 +11,6 @@ export const withRouter = (Component) => {
         return (
             <Component
             navigate={navigate}
-            useEffect={useEffect}
             {...props}
             />
         );

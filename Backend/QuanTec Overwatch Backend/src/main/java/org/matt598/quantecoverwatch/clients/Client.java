@@ -8,6 +8,7 @@ import org.matt598.quantecoverwatch.utils.ResponseTemplates;
 
 import java.io.*;
 import java.net.Socket;
+import java.sql.SQLOutput;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -220,6 +221,24 @@ public class Client extends Thread {
                                 continue;
                             }
 
+                            case "GETDISCORDID" -> {
+                                toClient.print(ResponseTemplates.genericJSON("{\"id\":\"" + credentialManager.getDiscordID(username) + "\"}"));
+                                toClient.flush();
+                                continue;
+                            }
+
+                            case "SETDISCORDID" -> {
+                                if(lines.length < 2){
+                                    toClient.print(ResponseTemplates.BADREQ);
+                                    toClient.flush();
+                                    continue;
+                                }
+                                credentialManager.setDiscordID(username, lines[1]);
+                                toClient.print(ResponseTemplates.LOGOUT);
+                                toClient.flush();
+                                continue;
+                            }
+
                             case "SHUTDOWN" -> {
                                 // TODO
                                 toClient.print(ResponseTemplates.INTERR);
@@ -264,6 +283,7 @@ public class Client extends Thread {
                                 // and the line after that is the new class. Users cannot promote anybody to a class
                                 // higher than they are, and users cannot set the class of anybody with a higher
                                 // permission level than them.
+                                // TODO add check for SSO users, at the moment this just silently fails on them.
                                 if(credentialManager.getUserClass(username).ordinal() < CredentialManager.USER_CLASS.ADMINISTRATOR.ordinal()){
                                     toClient.print(ResponseTemplates.FORBIDDEN);
                                 } else if(lines.length < 3){
@@ -285,7 +305,7 @@ public class Client extends Thread {
                                 // The class is set later.
                                 if(credentialManager.getUserClass(username).ordinal() < CredentialManager.USER_CLASS.ADMINISTRATOR.ordinal()){
                                     toClient.print(ResponseTemplates.FORBIDDEN);
-                                } else if((lines.length < 3) || (credentialManager.getUserClass(lines[1]) != null)){
+                                } else if((lines.length < 3) || (credentialManager.getUserClass(lines[1]) != null) || lines[1].equals("")){
                                     toClient.print(ResponseTemplates.BADREQ);
                                 } else {
                                     Logging.logInfo("[Client Events] User \""+username+"\" added a new user, with name \""+lines[1]+"\".");
@@ -309,6 +329,97 @@ public class Client extends Thread {
                                     Logging.logInfo("[Client Events] User \""+username+"\" deleted a user, with name \""+lines[1]+"\".");
                                     credentialManager.removeCredentialSet(lines[1]);
                                     toClient.print(ResponseTemplates.LOGOUT);
+                                }
+                                toClient.flush();
+                                continue;
+                            }
+
+                            case "CHANGEUSERNAME" -> {
+                                // Same restrictions as deleting users: no self-destructing, must be admin or higher,
+                                // must be acting on a user at or below your permission level.
+                                if(credentialManager.getUserClass(username).ordinal() < CredentialManager.USER_CLASS.ADMINISTRATOR.ordinal()){
+                                    toClient.print(ResponseTemplates.FORBIDDEN);
+                                } else if(lines.length < 3 || lines[1].equals(username) || credentialManager.getUserClass(lines[1]) != null){
+                                    toClient.print(ResponseTemplates.BADREQ);
+                                } else if(credentialManager.getUserClass(username).ordinal() < credentialManager.getUserClass(lines[1]).ordinal()){
+                                    toClient.print(ResponseTemplates.FORBIDDEN);
+                                } else {
+                                    Logging.logInfo("[Client Events] User \""+username+"\" changed user with name \""+lines[1]+"\" to \""+lines[2]+"\".");
+                                    credentialManager.setUsername(lines[1], lines[2]);
+                                    toClient.print(ResponseTemplates.LOGOUT);
+                                }
+                                toClient.flush();
+                                continue;
+                            }
+
+                            case "CHANGEPASS" -> {
+                                // Also the same as delete, changing one's own password is done via another method.
+                                if(credentialManager.getUserClass(username).ordinal() < CredentialManager.USER_CLASS.ADMINISTRATOR.ordinal()){
+                                    toClient.print(ResponseTemplates.FORBIDDEN);
+                                } else if(lines.length < 3 || username.equals(lines[1])){
+                                    toClient.print(ResponseTemplates.BADREQ);
+                                } else if(credentialManager.getUserClass(username).ordinal() < credentialManager.getUserClass(lines[1]).ordinal()){
+                                    toClient.print(ResponseTemplates.FORBIDDEN);
+                                } else {
+                                    Logging.logInfo("[Client Events] User \""+username+"\" changed password of user \""+lines[1]+"\".");
+                                    credentialManager.setPass(lines[1], lines[2]);
+                                    toClient.print(ResponseTemplates.LOGOUT);
+                                }
+                                toClient.flush();
+                                continue;
+                            }
+
+                            case "CHANGEOWNPASS" -> {
+                                // This one's a bit weird, since we need to verify the old password sent in this matches the one we have on record.
+                                // We're basically using it as a poor man's nonce in this way, ensuring that a bearer token nabbed from local storage
+                                // doesn't allow the complete hijacking of an account.
+                                if(lines.length < 2){
+                                    toClient.print(ResponseTemplates.BADREQ);
+                                } else {
+                                    // Dismantle JSON in a big try-catch so we can return 400 if it's invalid. This uses the same method
+                                    // as the authenticate method. TODO strip this out into a method to de-bloat run().
+                                    try {
+                                        String oldPass, newPass; // TODO should both be char[]
+
+                                        Pattern pattern = Pattern.compile("[^{}\"\\t:,]+");
+                                        Matcher matcher = pattern.matcher(lines[1]);
+
+                                        // First match should be "oldPassword"
+                                        if (!matcher.find()) {
+                                            throw new IllegalArgumentException();
+                                        }
+                                        if (!matcher.group().equals("oldPassword")) {
+                                            throw new IllegalArgumentException();
+                                        }
+                                        // Next one is the username.
+                                        if (!matcher.find()) {
+                                            throw new IllegalArgumentException();
+                                        }
+                                        oldPass = matcher.group();
+                                        // Next one should be "password"
+                                        if (!matcher.find()) {
+                                            throw new IllegalArgumentException();
+                                        }
+                                        if (!matcher.group().equals("newPassword")) {
+                                            throw new IllegalArgumentException();
+                                        }
+                                        // Next one is the password.
+                                        if (!matcher.find()) {
+                                            throw new IllegalArgumentException();
+                                        }
+                                        newPass = matcher.group();
+
+                                        // Check details with the obtained username and oldPass. If true, change password to newPass,
+                                        // else send 403.
+                                        if (credentialManager.checkDetails(username, oldPass)) {
+                                            credentialManager.setPass(username, newPass);
+                                            toClient.print(ResponseTemplates.LOGOUT);
+                                        } else {
+                                            toClient.print(ResponseTemplates.FORBIDDEN);
+                                        }
+                                    } catch (IllegalArgumentException e) {
+                                        toClient.print(ResponseTemplates.BADREQ);
+                                    }
                                 }
                                 toClient.flush();
                                 continue;
@@ -468,60 +579,113 @@ public class Client extends Thread {
     private void authenticate(String content){
         // TODO check https://xkcd.com/327/
 
-        // We should have a chunk of JSON in content. We'll process it assuming nothing is wrong, and then deal with
-        // the copious amount of potential exceptions by sending 401 if it's invalid.
-        String username, password;
+        // We should have a chunk of JSON in content. This could either be an OAuth code or a username and password.
+        // Check the JSON. If it starts with " {"code" " then it's an OAuth code, else it's username/password.
+        if(content.startsWith("{\"code\":")){
+            // This should have both an OAuth code and a "method" field telling us which SSO platform to use.
+            // We'll need to pull both, which because this is JSON is done in the same way as below.
+            try {
+                Pattern pattern = Pattern.compile("[^{}\"\\t:,]+");
+                Matcher matcher = pattern.matcher(content);
 
-        // TODO optimal default lifetime of token?
-        try {
-            // Username and password should both be strings following their respective tags.
-            Pattern pattern = Pattern.compile("[^{}\"\\t:,]+");
-            Matcher matcher = pattern.matcher(content);
+                if (!matcher.find()) {
+                    throw new IllegalArgumentException();
+                }
+                if (!matcher.group().equals("code")) {
+                    throw new IllegalArgumentException();
+                }
+                // Next one is the username.
+                if (!matcher.find()) {
+                    throw new IllegalArgumentException();
+                }
+                String OAuthCode = matcher.group();
+                // Next one should be "password"
+                if (!matcher.find()) {
+                    throw new IllegalArgumentException();
+                }
+                if (!matcher.group().equals("method")) {
+                    throw new IllegalArgumentException();
+                }
+                // Next one is the password.
+                if (!matcher.find()) {
+                    throw new IllegalArgumentException();
+                }
+                String OAuthMethod = matcher.group();
 
-            // First match should be "username", if not throw an IllegalArgumentException to run the 401.
-            if(!matcher.find()){
-                throw new IllegalArgumentException();
-            }
-            if(!matcher.group().equals("username")){
-                throw new IllegalArgumentException();
-            }
-            // Next one is the username.
-            if(!matcher.find()){
-                throw new IllegalArgumentException();
-            }
-            username = matcher.group();
-            // Next one should be "password"
-            if(!matcher.find()){
-                throw new IllegalArgumentException();
-            }
-            if(!matcher.group().equals("password")){
-                throw new IllegalArgumentException();
-            }
-            // Next one is the password.
-            if(!matcher.find()){
-                throw new IllegalArgumentException();
-            }
-            password = matcher.group();
+                String[] OAuthResponse = null;
+                // Ignore the warning that your IDE/linter is likely giving here, it's a switch to allow for more methods to be added later, should
+                // the need arise.
+                switch(OAuthMethod){
+                    case "discord" -> OAuthResponse = credentialManager.discordOAuthTokenExchange(OAuthCode);
+                }
 
-            // Now that we have those two, retrieve the salt for this user's hash, hash the given password and check it.
-            // Or just call a method that does it all for me, so I can de-bloat this class.
-            if(credentialManager.checkDetails(username, password)){
-                // Generate bearer token and send it back to the client. Update the client's 'lastLogin' value.
-                credentialManager.setUserLastLogin(username, System.currentTimeMillis()/1000);
-                String resp = credentialManager.createBearerToken(username);
-                toClient.print(ResponseTemplates.ValidAuthRequest(resp));
-                toClient.flush();
-            } else {
+                if(OAuthResponse == null){
+                    toClient.print(ResponseTemplates.UNAUTH);
+                    toClient.flush();
+                } else {
+                    // Send OK with a bunch of JSON.
+                    toClient.print(ResponseTemplates.genericJSON("{\"username\":\"" + OAuthResponse[0] + "\",\"token\":\"" + OAuthResponse[1] + "\"}"));
+                    toClient.flush();
+                }
+            } catch (NullPointerException | IllegalArgumentException e) {
                 // Send 401
                 toClient.print(ResponseTemplates.UNAUTH);
                 toClient.flush();
             }
+        } else {
+            String username, password;
+
+            // TODO optimal default lifetime of token?
+            try {
+                // Username and password should both be strings following their respective tags.
+                Pattern pattern = Pattern.compile("[^{}\"\\t:,]+");
+                Matcher matcher = pattern.matcher(content);
+
+                // First match should be "username", if not throw an IllegalArgumentException to run the 401.
+                if (!matcher.find()) {
+                    throw new IllegalArgumentException();
+                }
+                if (!matcher.group().equals("username")) {
+                    throw new IllegalArgumentException();
+                }
+                // Next one is the username.
+                if (!matcher.find()) {
+                    throw new IllegalArgumentException();
+                }
+                username = matcher.group();
+                // Next one should be "password"
+                if (!matcher.find()) {
+                    throw new IllegalArgumentException();
+                }
+                if (!matcher.group().equals("password")) {
+                    throw new IllegalArgumentException();
+                }
+                // Next one is the password.
+                if (!matcher.find()) {
+                    throw new IllegalArgumentException();
+                }
+                password = matcher.group();
+
+                // Now that we have those two, retrieve the salt for this user's hash, hash the given password and check it.
+                // Or just call a method that does it all for me, so I can de-bloat this class.
+                if (credentialManager.checkDetails(username, password)) {
+                    // Generate bearer token and send it back to the client. Update the client's 'lastLogin' value.
+                    credentialManager.setUserLastLogin(username, System.currentTimeMillis() / 1000);
+                    String resp = credentialManager.createBearerToken(username);
+                    toClient.print(ResponseTemplates.ValidAuthRequest(resp));
+                    toClient.flush();
+                } else {
+                    // Send 401
+                    toClient.print(ResponseTemplates.UNAUTH);
+                    toClient.flush();
+                }
 
 
-        } catch (NullPointerException | IllegalArgumentException e){
-            // Send 401
-            toClient.print(ResponseTemplates.UNAUTH);
-            toClient.flush();
+            } catch (NullPointerException | IllegalArgumentException e) {
+                // Send 401
+                toClient.print(ResponseTemplates.UNAUTH);
+                toClient.flush();
+            }
         }
     }
 }
