@@ -43,6 +43,7 @@
 
 .rightMenuContainer {
     width: 20%;
+    min-width: 300px;
     height: 100%;
     overflow: hidden;
 }
@@ -92,13 +93,13 @@
 #rightMenuUsername {
     margin: 0;
     font-weight: 700;
-    font-size: 1.5vw;
+    font-size: 28px;
 }
 
 #rightMenuClass {
     margin: 0;
     font-weight: 100;
-    font-size: 1vw;
+    font-size: 16px;
 }
 
 .menuButton {
@@ -110,7 +111,8 @@
     color: white;
     font-family: 'Roboto';
     padding-left: 5%;
-    font-size: 2vw;
+    font-size: 32px;
+    font-weight: 700;
     text-align: left;
     transition: 0.15s;
 }
@@ -130,7 +132,9 @@
 .contentContainer {
     height: 100%;
     width: 80%;
+    min-width: 1100px;
     overflow-y: scroll;
+    overflow-x: scroll;
     scroll-padding-top: 0;
 }
 
