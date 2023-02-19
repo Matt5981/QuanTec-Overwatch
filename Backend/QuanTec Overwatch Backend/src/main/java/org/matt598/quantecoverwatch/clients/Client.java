@@ -121,7 +121,7 @@ public class Client extends Thread {
                     continue;
                 }
 
-                // Check for OPTIONS, which can be sent unauthenticated wherever so CORS can be used by the front end.
+                // Check for OPTIONS, which can be sent unauthenticated so CORS can be used by the front end.
                 // TODO is this secure?
                 if(req.get(0).startsWith("OPTIONS")){
                     // TODO add check here that returns 403 if Origin is not one of our domains
@@ -132,16 +132,16 @@ public class Client extends Thread {
 
                 // Check for a POST request to /auth, which is an auth request and must be handled through a separate method
                 // to de-clutter this method.
-                if(req.get(0).startsWith("POST /auth")){
+                if(req.get(0).startsWith("POST /auth") && content != null){
                     authenticate(content);
                     continue;
                 }
 
                 // Auth check. Here we just need to get the client's bearer token, feed it to the credential manager,
-                // and respond accordingly. However, there's a few instances of things going wrong: No auth header,
-                // malformed/invalid auth header, or invalid token, hence the three checks here.
+                // and respond accordingly. However, there's a few instances of things going wrong: No Cookie header,
+                // malformed/invalid cookie, or invalid token, hence the three checks here.
                 // Check for auth header's presence.
-                if(headers.get("authorization") == null){
+                if(headers.get("cookie") == null){
                     // Return 401.
                     toClient.print(ResponseTemplates.UNAUTH);
                     toClient.flush();
@@ -149,13 +149,17 @@ public class Client extends Thread {
                 }
 
                 // Check auth header's value, making sure that it's bearer.
-                if(headers.get("authorization").split(" ").length != 2){
+                if(headers.get("cookie").split(" ").length < 1){
                     // Return 401.
                     toClient.print(ResponseTemplates.UNAUTH);
                     toClient.flush();
                     continue;
                 }
-                if(!headers.get("authorization").split(" ")[0].equals("Bearer")){
+                // FIXME btkn cookie is not necessarily the first that gets sent.
+                // This would be != 2, but since tokens are sent encoded in Base64 there may be equals padding the end of the token,
+                // which makes the success condition >= 2. Regardless there shouldn't be any equals symbols in the name, so the second
+                // check after the OR here works.
+                if(headers.get("cookie").split(" ")[0].split("=").length < 2 || !headers.get("cookie").split(" ")[0].split("=")[0].equals("btkn")){
                     // Return 401.
                     toClient.print(ResponseTemplates.UNAUTH);
                     toClient.flush();
@@ -163,7 +167,13 @@ public class Client extends Thread {
                 }
 
                 // Check token, finally.
-                String username = this.credentialManager.checkToken(headers.get("authorization").split(" ")[1]);
+                // To de-clutter it a bit we'll truncate the 'btkn=' from the beginning of the cookie name, and remove any semi-colons at the end.
+                String tkn = headers.get("cookie").split(" ")[0].substring(5);
+                if(tkn.endsWith(";")){
+                    tkn = tkn.substring(0,tkn.length()-2);
+                }
+
+                String username = this.credentialManager.checkToken(tkn);
                 if(username == null){
                     // Return 401.
                     toClient.print(ResponseTemplates.UNAUTH);
@@ -247,10 +257,11 @@ public class Client extends Thread {
                             }
 
                             case "LOGOUT" -> {
-                                // Revoke the client's token at their request, then send back a final 203.
+                                // Revoke the client's token at their request, then send back a final 204.
                                 // Conveniently, if we got this far then we don't need to do any sanity checks,
-                                // since they were done when we authed.
-                                credentialManager.revokeToken(headers.get("authorization").split(" ")[1]);
+                                // since they were done when we authed. Extra conveniently, so was the extraction
+                                // of the token from the cookie.
+                                credentialManager.revokeToken(tkn);
                                 toClient.print(ResponseTemplates.LOGOUT);
                                 toClient.flush();
                                 continue;
@@ -624,7 +635,7 @@ public class Client extends Thread {
                     toClient.flush();
                 } else {
                     // Send OK with a bunch of JSON.
-                    toClient.print(ResponseTemplates.genericJSON("{\"username\":\"" + OAuthResponse[0] + "\",\"token\":\"" + OAuthResponse[1] + "\"}"));
+                    toClient.print(ResponseTemplates.genericJSON("{\"username\":\"" + OAuthResponse[0] + "\"}"));
                     toClient.flush();
                 }
             } catch (NullPointerException | IllegalArgumentException e) {

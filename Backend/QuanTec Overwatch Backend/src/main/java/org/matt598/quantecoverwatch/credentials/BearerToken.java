@@ -16,7 +16,7 @@ public class BearerToken {
     public BearerToken(String username, int lifetime, Random random){
         this.username = username;
         // TODO make size of tokens configurable? check if doing so is redundant, this is only used once here.
-        byte[] tkn = new byte[4096];
+        byte[] tkn = new byte[2048];
         random.nextBytes(tkn);
         this.token = Base64.getEncoder().encodeToString(tkn);
         this.created = System.currentTimeMillis() / 1000;

@@ -38,12 +38,12 @@ public class Main {
             discordOAuthPublic = args[0];
             discordOAuthSecret = args[1];
         } else {
-            Logging.logError("Discord OAuth client id/secret not provided. Signing in with Discord will be disabled until the server is restarted and provided with this.");
+            Logging.logError("[System] Discord OAuth client id/secret not provided. Signing in with Discord will be disabled until the server is restarted and provided with this.");
         }
 
         if(args.length > 2){
             discordOverrideServer = args[2];
-            Logging.logWarning("Override server provided. Any member of the provided server is able to log into the webapp. PUBLIC ACCESS IS ENABLED.");
+            Logging.logWarning("[System] Override server provided. Any member of the provided server is able to log into the webapp. PUBLIC ACCESS IS ENABLED.");
         }
 
         Random random = new Random();

@@ -53,7 +53,7 @@ class Settings extends React.Component {
         this.onDiscordAccEdit = this.onDiscordAccEdit.bind(this);
 
         // Grab discord account ID.
-        fetch(new Request(SERVER_IP, {method: 'POST', mode: 'cors', headers: {Authorization: 'Bearer '+localStorage.getItem('btkn')}, body: 'GETDISCORDID'})).then(
+        fetch(new Request(SERVER_IP, {method: 'POST', mode: 'cors', credentials: 'include', body: 'GETDISCORDID'})).then(
             res => {return res.json();}
         ).then(
             res => {this.setState({authorizedDiscordAcc: res.id});}
@@ -61,7 +61,7 @@ class Settings extends React.Component {
         
         // This fetch is admin-only, so we need to check it before we get the userlist, otherwise it fills the console with errors since the API will return 403.
         if(USER_CLASSES[localStorage.getItem('usrClass')] >= USER_CLASSES['ADMINISTRATOR']){
-            fetch(new Request(SERVER_IP, {method: 'POST', mode: 'cors', headers: {Authorization: 'Bearer '+localStorage.getItem('btkn')}, body: 'GETALLUSERS'})).catch(
+            fetch(new Request(SERVER_IP, {method: 'POST', mode: 'cors', credentials: 'include', body: 'GETALLUSERS'})).catch(
                 NetworkError => this.setState({userList: null})
             ).then(
                 res => {return res.json();}
@@ -101,7 +101,7 @@ class Settings extends React.Component {
         localStorage.setItem('usrSettings', JSON.stringify(this.state.settings));
 
         // Launch to server.
-        fetch(new Request(SERVER_IP, {method: 'POST', mode: 'cors', headers: {Authorization: 'Bearer '+localStorage.getItem('btkn')}, body: 'UPDATEUSERSETTINGS\n'+JSON.stringify(this.state.settings)})).then(
+        fetch(new Request(SERVER_IP, {method: 'POST', mode: 'cors', credentials: 'include', body: 'UPDATEUSERSETTINGS\n'+JSON.stringify(this.state.settings)})).then(
             res => {
                 // Response received, hide the 'saving' message.
                 this.setState({shouldSavingBeVisible: false});
@@ -224,7 +224,7 @@ class Settings extends React.Component {
 
         // Send new details in POST to API. Since the server might throw an error here, there needs to be handling for it (e.g. a user can try to make a user with a duplicate name, which will return 400.)
         // We also need a custom dialog for the old password in changing one's own password returning 403, since it's likely to be encountered more then the others (which cannot happen via the UI without modifying it).
-        fetch(new Request(SERVER_IP, {method: 'POST', mode: 'cors', headers: {Authorization: 'Bearer '+localStorage.getItem('btkn')}, body: reqBody})).then(
+        fetch(new Request(SERVER_IP, {method: 'POST', mode: 'cors', credentials: 'include', body: reqBody})).then(
             res => {
 
                 if(this.state.currentUserDetailChangeDialog === 'changeOwnPass'){
@@ -244,7 +244,7 @@ class Settings extends React.Component {
                         alert('Server returned '+res.status+'. Please try again. THIS MESSAGE IS A PLACEHOLDER, AND WILL BE REPLACED SHORTLY.');
                     } else {
                         // Fetch new user list and shove it into state, which should make the render method show our changes.
-                        fetch(new Request(SERVER_IP, {method: 'POST', mode: 'cors', headers: {Authorization: 'Bearer '+localStorage.getItem('btkn')}, body: 'GETALLUSERS'})).catch(
+                        fetch(new Request(SERVER_IP, {method: 'POST', mode: 'cors', credentials: 'include', body: 'GETALLUSERS'})).catch(
                             NetworkError => this.setState({userList: null})
                         ).then(
                             res => {return res.json();}
@@ -278,13 +278,13 @@ class Settings extends React.Component {
             alert('Users can not set their own permission level. THIS MESSAGE IS A PLACEHOLDER, AND WILL BE REPLACED SHORTLY.');
             return;
         }
-        fetch(new Request(SERVER_IP, {method: 'POST', mode: 'cors', headers: {Authorization: 'Bearer '+localStorage.getItem('btkn')}, body: 'SETUSERCLASS\n'+username+'\n'+userClass})).then(
+        fetch(new Request(SERVER_IP, {method: 'POST', mode: 'cors', credentials: 'include', body: 'SETUSERCLASS\n'+username+'\n'+userClass})).then(
             res => {
                 if(res.status !== 204){
                     alert("Server returned "+res.status+'. Please try again. THIS MESSAGE IS A PLACEHOLDER, AND WILL BE REPLACED SHORTLY.');
                 } else {
                     // Fetch username list again and let setState redraw the table.
-                    fetch(new Request(SERVER_IP, {method: 'POST', mode: 'cors', headers: {Authorization: 'Bearer '+localStorage.getItem('btkn')}, body: 'GETALLUSERS'})).catch(
+                    fetch(new Request(SERVER_IP, {method: 'POST', mode: 'cors', credentials: 'include', body: 'GETALLUSERS'})).catch(
                         NetworkError => this.setState({userList: null})
                     ).then(
                         res => {return res.json();}
@@ -306,13 +306,13 @@ class Settings extends React.Component {
             alert('Users can not self-destruct. THIS MESSAGE IS A PLACEHOLDER, AND WILL BE REPLACED SHORTLY.');
             return;
         }
-        fetch(new Request(SERVER_IP, {method: 'POST', mode: 'cors', headers: {Authorization: 'Bearer '+localStorage.getItem('btkn')}, body: 'DELETEUSER\n'+username})).then(
+        fetch(new Request(SERVER_IP, {method: 'POST', mode: 'cors', credentials: 'include', body: 'DELETEUSER\n'+username})).then(
             res => {
                 if(res.status !== 204){
                     alert("Server returned "+res.status+'. Please try again. THIS MESSAGE IS A PLACEHOLDER, AND WILL BE REPLACED SHORTLY.');
                 } else {
                     // Fetch username list again and let setState redraw the table.
-                    fetch(new Request(SERVER_IP, {method: 'POST', mode: 'cors', headers: {Authorization: 'Bearer '+localStorage.getItem('btkn')}, body: 'GETALLUSERS'})).catch(
+                    fetch(new Request(SERVER_IP, {method: 'POST', mode: 'cors', credentials: 'include', body: 'GETALLUSERS'})).catch(
                         NetworkError => this.setState({userList: null})
                     ).then(
                         res => {return res.json();}
@@ -348,7 +348,7 @@ class Settings extends React.Component {
             if(this.state.discordAccSaveInProgress !== 1){
                 this.setState({discordAccSaveInProgress: 1})
                 setTimeout(() => {
-                    fetch(SERVER_IP, {method: 'POST', mode: 'cors', headers: {Authorization: 'Bearer '+localStorage.getItem('btkn')}, body: 'SETDISCORDID\n'+(this.state.authorizedDiscordAcc === '' ? 'null' : this.state.authorizedDiscordAcc)}).then(
+                    fetch(SERVER_IP, {method: 'POST', mode: 'cors', credentials: 'include', body: 'SETDISCORDID\n'+(this.state.authorizedDiscordAcc === '' ? 'null' : this.state.authorizedDiscordAcc)}).then(
                         res => {
                             if(res.status === 204){
                                 this.setState({

@@ -40,7 +40,7 @@ class Dashboard extends React.Component {
             interval: setInterval(() => this.updateData(), 1000)
         });
 
-        fetch(new Request(SERVER_IP, {method: "POST", headers: {Authorization: "Bearer "+localStorage.getItem('btkn')}, body: 'GETMEMUSAGE'})).catch(NetworkError => {
+        fetch(new Request(SERVER_IP, {method: "POST", mode: 'cors', credentials: 'include', body: 'GETMEMUSAGE'})).catch(NetworkError => {
             localStorage.clear();
             localStorage.setItem('kickoutReferralReason', 'badResponseFromServer');
             this.setState({
@@ -72,7 +72,7 @@ class Dashboard extends React.Component {
             }
         );
 
-        fetch(new Request(SERVER_IP, {method: 'post', mode: 'cors', headers: {Authorization: 'Bearer '+localStorage.getItem('btkn')}, body: 'GETCONTAINERS'})).then(
+        fetch(new Request(SERVER_IP, {method: 'POST', mode: 'cors', credentials: 'include', body: 'GETCONTAINERS'})).then(
             res => {return res.json();}
         ).then(
             res => {
@@ -86,7 +86,7 @@ class Dashboard extends React.Component {
     }
 
     updateData(){
-        fetch(new Request(SERVER_IP, {method: "POST", headers: {Authorization: "Bearer "+localStorage.getItem('btkn')}, body: 'GETMEMUSAGE'})).catch(NetworkError => {
+        fetch(new Request(SERVER_IP, {method: "POST", mode: 'cors', credentials: 'include', body: 'GETMEMUSAGE'})).catch(NetworkError => {
             localStorage.clear();
             localStorage.setItem('kickoutReferralReason', 'badResponseFromServer');
             this.props.killPtr();
@@ -129,7 +129,7 @@ class Dashboard extends React.Component {
             }
         );
 
-        fetch(new Request(SERVER_IP, {method: 'post', mode: 'cors', headers: {Authorization: 'Bearer '+localStorage.getItem('btkn')}, body: 'GETCONTAINERS'})).then(
+        fetch(new Request(SERVER_IP, {method: 'POST', mode: 'cors', credentials: 'include', body: 'GETCONTAINERS'})).then(
             res => {return res.json();}
         ).then(
             res => {
@@ -194,7 +194,7 @@ class Dashboard extends React.Component {
 
         event.target.enabled = false;
 
-        fetch(new Request(SERVER_IP, {method: 'POST', mode: 'cors', headers: {Authorization: 'Bearer '+localStorage.getItem('btkn')}, body: willStop+'\n'+target})).then(
+        fetch(new Request(SERVER_IP, {method: 'POST', mode: 'cors', credentials: 'include', body: willStop+'\n'+target})).then(
             res => {
                 if(res.status === 204){
                     // Call updateData early.

@@ -80,8 +80,7 @@ class Login extends React.Component {
         }).then(
           res => {
             if(res !== undefined){
-              // Same as regular login, though with a 'username' field.
-              localStorage.setItem('btkn', res.token);
+              // Same as regular login, though with content containing a 'username' field.
               localStorage.setItem('username', res.username);
               localStorage.removeItem('kickoutReferralReason');
               sessionStorage.clear();
@@ -137,10 +136,14 @@ class Login extends React.Component {
         shouldShowReferralReason: false,
         referralReasonLocked: false
       });
-    } else if(res.status === 200){
-      // Authenticated successfully, set flag so that onData() can link to /console
-      this.successful = true;
-      return res.json();
+    } else if(res.status === 204){
+      // Success. If the browser's behaving, it should've set our access token in a cookie, so we don't have to worry about that here.
+      // All we have to do is set the username in local storage so panes in the console can access it, remove the kickout reason, and
+      // clear session storage in case we authenticated manually after a botched OAuth attempt.
+      localStorage.setItem("username", this.state.username);
+      localStorage.removeItem('kickoutReferralReason');
+      sessionStorage.clear(); // Only used once here.
+      this.props.navigate("/console");
     }
 
     this.setState({
@@ -150,16 +153,6 @@ class Login extends React.Component {
     if(res.status !== 200){
       this.error_encountered = true;
     }
-  }
-
-  onData(data){
-    if(data !== undefined && this.successful){
-      localStorage.setItem("btkn", data.token);
-      localStorage.setItem("username", this.state.username);
-      localStorage.removeItem('kickoutReferralReason');
-      sessionStorage.clear(); // Only used once, here.
-      this.props.navigate("/console");
-    } 
   }
 
   onFormSubmit(event){
@@ -175,7 +168,7 @@ class Login extends React.Component {
 
     // Manually form login credentials temporarily, as setState isn't instant (We still set it here to make use of it later, after we've confirmed it's valid).
 
-    const request = new Request(SERVER_IP+'auth', {method: "POST", mode: "cors", body: JSON.stringify(details)});
+    const request = new Request(SERVER_IP+'auth', {method: "POST", mode: "cors", credentials: 'include', body: JSON.stringify(details)});
     fetch(request).catch(NetworkError => {
       this.setState({
         submit_text: 'Server Error',
@@ -184,9 +177,8 @@ class Login extends React.Component {
       setTimeout(() => this.setState({submit_button_classes: "submit", submit_text: "Login", submitted: false}), 3000)    
     }).then(
       (response) => this.onLoad(response)
-    ).then(
-      (blob) => this.onData(blob)
     );
+    
     this.error_encountered = false;
 
     event.preventDefault();
@@ -219,7 +211,7 @@ class Login extends React.Component {
               }
               <p style={{paddingLeft: '7.5px'}}>Login with Discord</p></button>
         </div>
-        <video preload='true' autoPlay={this.state.killScreen} loop='true' className={this.state.killScreen ? null : 'disabled'}>
+        <video preload='true' autoPlay={this.state.killScreen} loop={true} className={this.state.killScreen ? null : 'disabled'}>
           <source src="https://cdn.discordapp.com/attachments/802032518421151774/1071296286675959849/theKing.mp4" type="video/mp4" />
           LOCKOUT TRIGGERED
         </video> 
