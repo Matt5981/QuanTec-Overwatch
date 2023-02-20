@@ -4,6 +4,7 @@ import org.matt598.quantecoverwatch.commands.LXDUtils;
 import org.matt598.quantecoverwatch.credentials.CredentialManager;
 import org.matt598.quantecoverwatch.utils.Format;
 import org.matt598.quantecoverwatch.utils.Logging;
+import org.matt598.quantecoverwatch.utils.QuanTecRequestDelegator;
 import org.matt598.quantecoverwatch.utils.ResponseTemplates;
 
 import java.io.*;
@@ -181,10 +182,21 @@ public class Client extends Thread {
                     continue;
                 }
 
-                // We now have an authenticated, hopefully complete request. If it's a GET, then we've been browsed to and can
-                // safely ignore it with a boilerplate page.
-                if(req.get(0).startsWith("GET")){
+                // We now have an authenticated, hopefully complete request. If it's a GET outside the /quantec endpoint, we've been browsed to by a curious
+                // user with a valid auth cookie, so we can return a boilerplate.
+
+                String method = req.get(0).split(" ")[0], path = req.get(0).split(" ")[1];
+
+                if(method.equals("GET") && !path.startsWith("/quantec")){
                     toClient.print(ResponseTemplates.GET);
+                    toClient.flush();
+                    continue;
+                }
+
+                // If it's a GET to quantec, it needs to be forwarded to the QuanTec request delegator since we're effectively
+                // proxying to quantec.
+                if(method.equals("GET") && path.startsWith("/quantec")){
+                    toClient.print(QuanTecRequestDelegator.handle(path.substring(8)));
                     toClient.flush();
                     continue;
                 }
