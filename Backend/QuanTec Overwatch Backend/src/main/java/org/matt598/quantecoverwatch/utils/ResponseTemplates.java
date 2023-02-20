@@ -11,7 +11,7 @@ import java.net.URL;
 public class ResponseTemplates {
 
     private static final String STDHEADERS =
-            // STOPSHIP change back to https://thegaff.dev!
+            // STOPSHIP change back to our domain!
             "Server: QuanTec\r\n" +
                     Logging.getDateHeader() + "\r\n" +
                     "Strict-Transport-Security: max-age=31536000; includeSubDomains\r\n" +
@@ -46,8 +46,8 @@ public class ResponseTemplates {
         return "HTTP/1.1 204 No Content\r\n" +
                 STDHEADERS +
                 "Content-Type: application/json; charset=utf-8\r\n" +
-                // STOPSHIP set the 'Secure' attribute BEFORE deploying
-                "Set-Cookie: btkn="+token+"; path=/; HttpOnly; Max-Age: 3600; SameSite=Strict\r\n" +
+                // STOPSHIP set the 'Secure' attribute BEFORE deploying!
+                "Set-Cookie: btkn="+token+"; path=/; Secure; HttpOnly; Max-Age: 3600; SameSite=Strict\r\n" +
                 "\r\n";
     }
 
