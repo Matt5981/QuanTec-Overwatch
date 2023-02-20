@@ -21,19 +21,11 @@ class Console extends React.Component {
 
         };
 
-        if(localStorage.getItem('btkn') === undefined){
-            this.setState({
-                kill: true,
-            })
-        }
-
         // Get user settings. We'll overwrite the local copy of the settings if present, since the server copy overrides this one.
-        fetch(new Request(SERVER_IP, {method: 'POST', mode: 'cors', body: 'GETUSERSETTINGS', headers: {'Authorization': 'Bearer '+localStorage.getItem('btkn')}}))
+        // As we're using cookies for auth, this also serves as the first check as to whether we're authenticated or not.
+        fetch(new Request(SERVER_IP, {method: 'POST', mode: 'cors', credentials: 'include', body: 'GETUSERSETTINGS'}))
         .then(res => {
             if(res.status !== 200){
-                if(localStorage.getItem('btkn') !== undefined){
-                    localStorage.removeItem('btkn');
-                }
                 this.setState({
                     kill: true,
                 })

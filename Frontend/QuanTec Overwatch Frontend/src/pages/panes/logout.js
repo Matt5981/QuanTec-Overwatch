@@ -17,7 +17,7 @@ class Logout extends React.Component {
 
     onClick(event){
         // Logout clicked, send LOGOUT in a post to API and return to login page. API will invalidate our token.
-        fetch(new Request(SERVER_IP, {method: 'POST', headers: {Authorization: 'Bearer '+localStorage.getItem('btkn')}, body: 'LOGOUT'})).then(
+        fetch(new Request(SERVER_IP, {method: 'POST', mode: 'cors', credentials: 'include', body: 'LOGOUT'})).then(
             (res) => {
                 localStorage.removeItem('btkn');
                 localStorage.removeItem('username');

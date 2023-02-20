@@ -11,11 +11,14 @@ import java.net.URL;
 public class ResponseTemplates {
 
     private static final String STDHEADERS =
+            // STOPSHIP change back to https://thegaff.dev!
             "Server: QuanTec\r\n" +
                     Logging.getDateHeader() + "\r\n" +
                     "Strict-Transport-Security: max-age=31536000; includeSubDomains\r\n" +
                     "Connection: Keep-Alive\r\n" +
-                    "Access-Control-Allow-Origin: *\r\n";
+                    "Access-Control-Allow-Origin: http://localhost:3000\r\n" +
+                    "Access-Control-Allow-Credentials: true\r\n" +
+                    "Access-Control-Expose-Headers: Set-Cookie\r\n";
 
     public static String CORSOPTIONS(String origin) {
         return "HTTP/1.1 204 No Content\r\n" +
@@ -25,7 +28,9 @@ public class ResponseTemplates {
                 "Connection: Keep-Alive\r\n" +
                 "Access-Control-Allow-Origin: " + origin + "\r\n" +
                 "Access-Control-Allow-Methods: POST, GET, OPTIONS\r\n" +
-                "Access-Control-Allow-Headers: Content-Type, Authorization\r\n" +
+                "Access-Control-Allow-Headers: Content-Type, Authorization, Cookie\r\n" +
+                "Access-Control-Expose-Headers: Set-Cookie\r\n" +
+                "Access-Control-Allow-Credentials: true\r\n" +
                 "Access-Control-Max-Age: 3600\r\n" +
                 "\r\n";
     }
@@ -38,14 +43,13 @@ public class ResponseTemplates {
                     "\r\n";
 
     public static String ValidAuthRequest(String token){
-        return "HTTP/1.1 200 OK\r\n" +
+        return "HTTP/1.1 204 No Content\r\n" +
                 STDHEADERS +
-                "Content-Length: " + (12 + token.length()) + "\r\n" +
                 "Content-Type: application/json; charset=utf-8\r\n" +
-                "\r\n" +
-                "{\"token\":\"" + token + "\"}";
+                // STOPSHIP set the 'Secure' attribute BEFORE deploying
+                "Set-Cookie: btkn="+token+"; path=/; HttpOnly; Max-Age: 3600; SameSite=Strict\r\n" +
+                "\r\n";
     }
-
 
     public static final String GET =
             "HTTP/1.1 200 OK\r\n" +
@@ -107,7 +111,7 @@ public class ResponseTemplates {
 
     // TODO HTTP/1.1 compliance
     public static final String CHUNKING =
-            "HTTP/1.1 400 Bad Request\r\n" +
+            "HTTP/1.1 501 Not Implemented\r\n" +
                     STDHEADERS +
                     "Content-Length: 34\r\n" +
                     "Content-Type: text/plain\r\n" +
