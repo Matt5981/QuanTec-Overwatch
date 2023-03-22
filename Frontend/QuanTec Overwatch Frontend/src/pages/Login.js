@@ -189,7 +189,7 @@ class Login extends React.Component {
     return (
       <div className="container">
         <div className={this.state.killScreen ? 'App disabled' : "App"}>
-          <h1 id="title">QuanTec Overwatch v0.2.1b</h1>
+          <h1 id="title">QuanTec Overwatch v0.3.0b</h1>
           <form id="login" onSubmit={this.onFormSubmit}>
             <label className="loginfield">Username</label>
             <input type="text" id="username" value={this.state.username} onChange={this.onFormChange} />

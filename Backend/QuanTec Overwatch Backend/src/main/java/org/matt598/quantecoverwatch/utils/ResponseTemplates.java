@@ -10,7 +10,7 @@ import java.net.URL;
 
 public class ResponseTemplates {
 
-    private static final String STDHEADERS =
+    public static final String STDHEADERS =
             // STOPSHIP change back to https://thegaff.dev!
             "Server: QuanTec\r\n" +
                     Logging.getDateHeader() + "\r\n" +
@@ -27,7 +27,7 @@ public class ResponseTemplates {
                 "Strict-Transport-Security: max-age=31536000; includeSubDomains\r\n" +
                 "Connection: Keep-Alive\r\n" +
                 "Access-Control-Allow-Origin: " + origin + "\r\n" +
-                "Access-Control-Allow-Methods: POST, GET, OPTIONS\r\n" +
+                "Access-Control-Allow-Methods: POST, GET, PUT, DELETE, OPTIONS\r\n" +
                 "Access-Control-Allow-Headers: Content-Type, Authorization, Cookie\r\n" +
                 "Access-Control-Expose-Headers: Set-Cookie\r\n" +
                 "Access-Control-Allow-Credentials: true\r\n" +
@@ -46,8 +46,8 @@ public class ResponseTemplates {
         return "HTTP/1.1 204 No Content\r\n" +
                 STDHEADERS +
                 "Content-Type: application/json; charset=utf-8\r\n" +
-                // STOPSHIP set the 'Secure' attribute BEFORE deploying
-                "Set-Cookie: btkn="+token+"; path=/; HttpOnly; Max-Age: 3600; SameSite=Strict\r\n" +
+                // STOPSHIP set the 'Secure' and 'SameSite' attributes BEFORE deploying! ; SameSite=Strict
+                "Set-Cookie: btkn="+token+"; path=/; HttpOnly; Max-Age: 3600\r\n" +
                 "\r\n";
     }
 

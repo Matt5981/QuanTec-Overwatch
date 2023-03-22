@@ -75,7 +75,7 @@ public class Client extends Thread {
                     req.add(next);
                 }
 
-                // If chunked encoding requested, send back 400 and close the connection.
+                // If chunked encoding requested, send back 400 and close the connection. FIXME
                 if(requested_chunked_encoding){
                     toClient.print(ResponseTemplates.CHUNKING);
                     toClient.flush();
@@ -156,11 +156,25 @@ public class Client extends Thread {
                     toClient.flush();
                     continue;
                 }
-                // FIXME btkn cookie is not necessarily the first that gets sent.
+
+                // Try to find a cookie starting with 'btkn', which is our auth cookie.
+                String cookie = null;
+                for(String candidate : headers.get("cookie").split(" ")){
+                    if(candidate.startsWith("btkn=")){
+                        cookie = candidate;
+                    }
+                }
+
+                if(cookie == null){
+                    toClient.print(ResponseTemplates.UNAUTH);
+                    toClient.flush();
+                    continue;
+                }
+
                 // This would be != 2, but since tokens are sent encoded in Base64 there may be equals padding the end of the token,
                 // which makes the success condition >= 2. Regardless there shouldn't be any equals symbols in the name, so the second
                 // check after the OR here works.
-                if(headers.get("cookie").split(" ")[0].split("=").length < 2 || !headers.get("cookie").split(" ")[0].split("=")[0].equals("btkn")){
+                if(cookie.split("=").length < 2){
                     // Return 401.
                     toClient.print(ResponseTemplates.UNAUTH);
                     toClient.flush();
@@ -169,7 +183,7 @@ public class Client extends Thread {
 
                 // Check token, finally.
                 // To de-clutter it a bit we'll truncate the 'btkn=' from the beginning of the cookie name, and remove any semi-colons at the end.
-                String tkn = headers.get("cookie").split(" ")[0].substring(5);
+                String tkn = cookie.substring(5);
                 if(tkn.endsWith(";")){
                     tkn = tkn.substring(0,tkn.length()-2);
                 }
@@ -193,10 +207,12 @@ public class Client extends Thread {
                     continue;
                 }
 
-                // If it's a GET to quantec, it needs to be forwarded to the QuanTec request delegator since we're effectively
-                // proxying to quantec.
-                if(method.equals("GET") && path.startsWith("/quantec")){
-                    toClient.print(QuanTecRequestDelegator.handle(path.substring(8)));
+                // If it's a request to quantec, it needs to be forwarded to the QuanTec request delegator since we're effectively
+                // proxying to it. Since it uses all of the GET, DELETE, PUT and POST methods we'll ignore the method. The identity/access control
+                // for the quantec methods is done by the delegator, so we just have to pass it the request.
+                if(path.startsWith("/quantec")){
+                    System.out.println("Forwarding request to QuanTec\n\theading: "+method+" "+path+" HTTP/1.1\n\taltered heading: "+method+" "+path.substring(8)+" HTTP/1.1");
+                    client.getOutputStream().write(QuanTecRequestDelegator.handle(path.substring(8), method, content, headers.get("content-type")));
                     toClient.flush();
                     continue;
                 }
@@ -475,6 +491,11 @@ public class Client extends Thread {
                                     }
 
                                     json.append(String.format("{\"name\":\"%s\",\"state\":\"%s\",\"status\":\"%s\",\"ports\":%s},", container[0], container[1], containerState, portList));
+                                }
+
+                                if(containers.length == 0){
+                                    // Make sure the opening '[' isn't deleted if there aren't any containers.
+                                    json.append(".");
                                 }
 
                                 json.deleteCharAt(json.length()-1).append("]}");
