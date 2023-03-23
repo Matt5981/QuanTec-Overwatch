@@ -21,6 +21,7 @@ class Logout extends React.Component {
             (res) => {
                 localStorage.removeItem('btkn');
                 localStorage.removeItem('username');
+                localStorage.removeItem('discordSnowflake');
                 this.setState({redir: true});
             }
         );

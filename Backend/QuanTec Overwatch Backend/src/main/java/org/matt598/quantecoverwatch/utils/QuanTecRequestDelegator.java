@@ -1,15 +1,95 @@
 package org.matt598.quantecoverwatch.utils;
 
+import org.matt598.quantecoverwatch.utils.fetch.Fetch;
+import org.matt598.quantecoverwatch.utils.fetch.Response;
+
 import java.io.*;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public abstract class QuanTecRequestDelegator {
-    public static byte[] handle(String path, String method, String reqContent, String contentType){
+    public static byte[] handle(String path, String method, String reqContent, String contentType, String userSnowflake, boolean ignorePermissionChecks){
         // Forward to QuanTec. TODO block requests based on user class when the images/ and words/ endpoints get implemented.
         try(Socket quantec = new Socket("localhost", 8444)) {
+
+            if(!ignorePermissionChecks){
+                // Check that we have a snowflake provided, that the snowflake is valid, and that the user possessing the snowflake
+                // has MANAGE_SERVER in the server they're trying to access, if either the images/ or words/ endpoints are being
+                // used.
+                if(path.toLowerCase().startsWith("/words") || path.toLowerCase().startsWith("/images")){
+                    // Get guild snowflake.
+                    // I'd use a switch here, but it's only three cases, and all have distinct handling.
+                    String snowflake;
+                    if(path.split("/").length == 3){
+                        snowflake = path.split("/")[2];
+                    } else if(path.split("/").length == 4){
+                        if(path.startsWith("/images/tolerance")){
+                            snowflake = path.split("/")[3];
+                        } else {
+                            snowflake = path.split("/")[2];
+                        }
+                    } else {
+                        // malformed request.
+                        return ResponseTemplates.FORBIDDEN.getBytes();
+                    }
+
+                    // Check if snowflake is a valid long.
+                    try {
+                        Long.parseLong(snowflake);
+                    } catch (NumberFormatException e){
+                        return ResponseTemplates.FORBIDDEN.getBytes();
+                    }
+
+                    // Check user snowflake.
+                    try {
+                        Long.parseLong(userSnowflake);
+                    } catch (NumberFormatException e){
+                        return ResponseTemplates.FORBIDDEN.getBytes();
+                    }
+
+                    // Send request to quantec to get the list of servers the user has MANAGE_SERVER in.
+                    byte[] qtRes = handle("/users/manageserver/"+userSnowflake, "GET", null, null, null, true);
+                    Response response = Fetch.parseQuantecResponse(qtRes);
+                    if(response == null){
+                        return ResponseTemplates.FORBIDDEN.getBytes();
+                    }
+                    if(response.getResponseCode() != 200){
+                        return ResponseTemplates.FORBIDDEN.getBytes();
+                    }
+
+                    Pattern jsonExtractor = Pattern.compile("(?<=\")[0-9]*?(?=\")");
+                    Matcher jsonExtract = jsonExtractor.matcher(response.getResponse());
+
+                    if(!jsonExtract.find()){
+                        // No manage servers.
+                        return ResponseTemplates.FORBIDDEN.getBytes();
+                    }
+
+                    // Loop them all into a list, then if the list contains the target guild, allow it to proceed, else exit.
+                    List<String> guilds = new ArrayList<>();
+                    do {
+                        guilds.add(jsonExtract.group());
+                    } while(jsonExtract.find());
+
+                    if(!guilds.contains(snowflake)){
+                        return ResponseTemplates.FORBIDDEN.getBytes();
+                    }
+                }
+
+                // If user tries to query /users/manageserver on somebody that isn't themselves, reject.
+                if(path.toLowerCase().startsWith("/users/manageserver")){
+                    if(path.split("/").length != 4 || userSnowflake == null){
+                        return ResponseTemplates.FORBIDDEN.getBytes();
+                    } else if(!userSnowflake.equals(path.split("/")[3])) {
+                        return ResponseTemplates.FORBIDDEN.getBytes();
+                    }
+                }
+            }
 
             PrintWriter qtWriter = new PrintWriter(new OutputStreamWriter(quantec.getOutputStream()));
             InputStream qtReader = quantec.getInputStream();

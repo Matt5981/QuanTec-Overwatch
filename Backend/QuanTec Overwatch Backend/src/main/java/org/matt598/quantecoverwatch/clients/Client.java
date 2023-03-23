@@ -185,6 +185,7 @@ public class Client extends Thread {
                 // To de-clutter it a bit we'll truncate the 'btkn=' from the beginning of the cookie name, and remove any semi-colons at the end.
                 String tkn = cookie.substring(5);
                 if(tkn.endsWith(";")){
+                    // STOPSHIP check if changing this to one works, it shouldn't be two?
                     tkn = tkn.substring(0,tkn.length()-2);
                 }
 
@@ -208,11 +209,16 @@ public class Client extends Thread {
                 }
 
                 // If it's a request to quantec, it needs to be forwarded to the QuanTec request delegator since we're effectively
-                // proxying to it. Since it uses all of the GET, DELETE, PUT and POST methods we'll ignore the method. The identity/access control
+                // proxying to it. Since it uses all of the GET, DELETE, PUT and POST methods, we'll ignore the method. The identity/access control
                 // for the quantec methods is done by the delegator, so we just have to pass it the request.
                 if(path.startsWith("/quantec")){
-                    System.out.println("Forwarding request to QuanTec\n\theading: "+method+" "+path+" HTTP/1.1\n\taltered heading: "+method+" "+path.substring(8)+" HTTP/1.1");
-                    client.getOutputStream().write(QuanTecRequestDelegator.handle(path.substring(8), method, content, headers.get("content-type")));
+
+                    // Work out user's token, which we'll only approve if the user signed in with SSO to verify they actually own the account.
+                    // We'll also allow superusers to override these auth checks entirely.
+                    String userToken = credentialManager.tokenGeneratedViaSSO(tkn) ? credentialManager.getDiscordID(username) : null;
+                    boolean isSuperUser = credentialManager.getUserClass(username).equals(CredentialManager.USER_CLASS.SUPERUSER);
+
+                    client.getOutputStream().write(QuanTecRequestDelegator.handle(path.substring(8), method, content, headers.get("content-type"), userToken, isSuperUser));
                     toClient.flush();
                     continue;
                 }
@@ -656,19 +662,21 @@ public class Client extends Thread {
                 }
                 String OAuthMethod = matcher.group();
 
-                String[] OAuthResponse = null;
+                String[] OAuthResponse;
                 // Ignore the warning that your IDE/linter is likely giving here, it's a switch to allow for more methods to be added later, should
                 // the need arise.
                 switch(OAuthMethod){
                     case "discord" -> OAuthResponse = credentialManager.discordOAuthTokenExchange(OAuthCode);
+
+                    default -> throw new IllegalArgumentException();
                 }
 
                 if(OAuthResponse == null){
                     toClient.print(ResponseTemplates.UNAUTH);
                     toClient.flush();
                 } else {
-                    // Send OK with a bunch of JSON.
-                    toClient.print(ResponseTemplates.genericJSON("{\"username\":\"" + OAuthResponse[0] + "\"}"));
+                    // Send OK with a bunch of JSON. The Discord OAuth exchange gives us their snowflake.
+                    toClient.print(ResponseTemplates.validAuthRequest(String.format("{\"username\":\"%s\",\"snowflake\":\"%s\"}", OAuthResponse[0], OAuthResponse[2]), OAuthResponse[1]));
                     toClient.flush();
                 }
             } catch (NullPointerException | IllegalArgumentException e) {
@@ -715,7 +723,7 @@ public class Client extends Thread {
                 if (credentialManager.checkDetails(username, password)) {
                     // Generate bearer token and send it back to the client. Update the client's 'lastLogin' value.
                     credentialManager.setUserLastLogin(username, System.currentTimeMillis() / 1000);
-                    String resp = credentialManager.createBearerToken(username);
+                    String resp = credentialManager.createBearerToken(username, false);
                     toClient.print(ResponseTemplates.ValidAuthRequest(resp));
                     toClient.flush();
                 } else {

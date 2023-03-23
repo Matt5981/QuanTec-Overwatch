@@ -12,6 +12,7 @@ public class ResponseTemplates {
 
     public static final String STDHEADERS =
             // STOPSHIP change back to https://thegaff.dev!
+            // TODO don't send Access-Control-Expose-Headers: Set-Cookie unless it's an auth request.
             "Server: QuanTec\r\n" +
                     Logging.getDateHeader() + "\r\n" +
                     "Strict-Transport-Security: max-age=31536000; includeSubDomains\r\n" +
@@ -45,10 +46,21 @@ public class ResponseTemplates {
     public static String ValidAuthRequest(String token){
         return "HTTP/1.1 204 No Content\r\n" +
                 STDHEADERS +
-                "Content-Type: application/json; charset=utf-8\r\n" +
                 // STOPSHIP set the 'Secure' and 'SameSite' attributes BEFORE deploying! ; SameSite=Strict
-                "Set-Cookie: btkn="+token+"; path=/; HttpOnly; Max-Age: 3600\r\n" +
+                "Set-Cookie: btkn="+token+"; path=/; HttpOnly; Max-Age: 3600; SameSite=Strict\r\n" +
                 "\r\n";
+    }
+
+    // Discord OAuth variant of the above.
+    public static String validAuthRequest(String json, String token) {
+        return  "HTTP/1.1 200 OK\r\n" +
+                STDHEADERS +
+                "Content-Type: application/json; charset=utf-8\r\n" +
+                "Content-Length: " + json.length() + "\r\n" +
+                // STOPSHIP set the 'Secure' and 'SameSite' attributes BEFORE deploying! ; SameSite=Strict
+                "Set-Cookie: btkn="+token+"; path=/; HttpOnly; Max-Age: 3600; SameSite=Strict\r\n" +
+                "\r\n" +
+                json;
     }
 
     public static final String GET =

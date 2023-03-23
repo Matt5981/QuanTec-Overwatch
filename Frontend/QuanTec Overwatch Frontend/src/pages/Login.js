@@ -17,7 +17,7 @@ class Login extends React.Component {
       submit_button_classes: "submit",
       login: "",
       // STOPSHIP change back to https!!!
-      referralReason: !window.location.toString().startsWith('http://') ? (<h1><span style={{color: 'red', backgroundColor: 'white'}}>WARNING: THIS BROWSER IS NOT USING HTTPS. DO NOT ENTER YOUR PASSWORD!</span></h1>) : localStorage.getItem('kickoutReferralReason'),
+      referralReason: !window.location.toString().startsWith('http://') ? (<h1><span style={{color: 'red', backgroundColor: 'white'}}>WARNING: THIS BROWSER IS NOT USING HTTPS. DO NOT ATTEMPT TO LOGIN!</span></h1>) : localStorage.getItem('kickoutReferralReason'),
       shouldShowReferralReason: localStorage.getItem('kickoutReferralReason') !== null || !window.location.toString().startsWith('http://'),
       referralReasonLocked: !window.location.toString().startsWith('http://'),
       failedLogins: 0,
@@ -53,7 +53,7 @@ class Login extends React.Component {
         sessionStorage.clear();
       } else {
         // State matches and we've got the code, send a custom login request to the auth endpoint.
-        fetch(new Request(SERVER_IP+'auth', {method: 'POST', mode: 'cors', body: JSON.stringify({code: params.get('code'), method: 'discord'})})).then(res => {
+        fetch(new Request(SERVER_IP+'auth', {method: 'POST', mode: 'cors', credentials: 'include', body: JSON.stringify({code: params.get('code'), method: 'discord'})})).then(res => {
           if(res.status !== 200){
             // Denied, unlock form, reset sessionStorage and continue.
             sessionStorage.clear();
@@ -80,8 +80,9 @@ class Login extends React.Component {
         }).then(
           res => {
             if(res !== undefined){
-              // Same as regular login, though with content containing a 'username' field.
+              // Same as regular login, though with content containing a 'username' and 'snowflake' field so we can populate localStorage.
               localStorage.setItem('username', res.username);
+              localStorage.setItem('discordSnowflake', res.snowflake);
               localStorage.removeItem('kickoutReferralReason');
               sessionStorage.clear();
               this.props.navigate('/console');
