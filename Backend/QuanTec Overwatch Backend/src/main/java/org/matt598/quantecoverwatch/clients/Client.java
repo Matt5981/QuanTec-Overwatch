@@ -9,7 +9,6 @@ import org.matt598.quantecoverwatch.utils.ResponseTemplates;
 
 import java.io.*;
 import java.net.Socket;
-import java.sql.SQLOutput;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -676,6 +675,7 @@ public class Client extends Thread {
                     toClient.flush();
                 } else {
                     // Send OK with a bunch of JSON. The Discord OAuth exchange gives us their snowflake.
+                    credentialManager.setUserLastLogin(OAuthResponse[0], System.currentTimeMillis() / 1000);
                     toClient.print(ResponseTemplates.validAuthRequest(String.format("{\"username\":\"%s\",\"snowflake\":\"%s\"}", OAuthResponse[0], OAuthResponse[2]), OAuthResponse[1]));
                     toClient.flush();
                 }

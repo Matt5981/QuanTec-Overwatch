@@ -87,6 +87,15 @@
     font-family: 'Roboto';
 }
 
+@keyframes dialogBoxContainerAppear {
+    0% {
+        opacity: 0%;
+    }
+    100% {
+        opacity: 100%;
+    }
+}
+
 .dialogBoxContainer {
     position: absolute;
     top: 0;
@@ -97,16 +106,27 @@
     height: 100%;
     width: 100%;
     background-color: rgba(0,0,0,0.5);
-    transition: all 0.15s linear;
+    animation: dialogBoxContainerAppear 0.3s ease;
 }
 
 .hidden {
-    opacity: 0%;
-    z-index: -1;
+    display: none;
+}
+
+@keyframes dialogBoxSettingsContainerAnim {
+    0% {
+        transform: translateY(-100px);
+        opacity: 25%;
+    }
+    100% {
+        transform: translateY(0px);
+        opacity: 100%;
+    }
 }
 
 .dialogBoxContainer > .settingsContainer {
     background-color: rgb(55,55,55);
+    animation: dialogBoxSettingsContainerAnim 0.3s ease;
 }
 
 .settingIndividual > h2 {
@@ -274,7 +294,7 @@
     background-color: rgb(75,75,75);
 }
 
-#confirmUser, #confirmPass, #oldPassword {
+#confirmUser, #confirmPass, #oldPassword, #newUser > #password, #newUser > #username {
     background-color: rgb(55,55,55);
     border: 2px solid rgb(240,240,240);
     border-radius: 25px;

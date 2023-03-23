@@ -726,9 +726,9 @@ class Quantec extends React.Component {
                         <form id='newBannedWordForm' onSubmit={this.onDialogFormSubmit}>
                             <input type='text' id='word' onChange={this.onDialogFormChange} value={this.state.formData['word']} />
                             <div className='flexHorizontal'>
-                                <input type='submit' value='Ban' id='newBannedWordBanButton' disabled={this.state.submitDisabled} />
-                                <hr />
                                 <input type='button' value='Cancel' id='newBannedWordCancelButton' onClick={this.onDialogCancel} />
+                                <hr />
+                                <input type='submit' value='Ban' id='newBannedWordBanButton' disabled={this.state.submitDisabled} />
                             </div>
                         </form>
                     </div>;
@@ -758,9 +758,9 @@ class Quantec extends React.Component {
                                 </div>
                             </label>
                             <div className='flexHorizontal'>
-                                <input type='submit' value='Ban' id='newBannedWordBanButton' disabled={this.state.submitDisabled || !this.state.formData.uploadReady} />
-                                <hr />
                                 <input type='button' value='Cancel' id='newBannedWordCancelButton' onClick={this.onDialogCancel} />
+                                <hr />
+                                <input type='submit' value='Ban' id='newBannedWordBanButton' disabled={this.state.submitDisabled || !this.state.formData.uploadReady} />
                             </div>
                         </form>
                     </div>;
@@ -791,9 +791,9 @@ class Quantec extends React.Component {
                                 </div>
                             </label>
                             <div className='flexHorizontal'>
-                                <input type='submit' value='Save' id='quantecMutatorDialogSave' className='quantecMutatorDialogSave' disabled={this.state.submitDisabled} />
-                                <hr />
                                 <input type='button' value='Cancel' id='newBannedWordCancelButton' onClick={this.onDialogCancel} />
+                                <hr />
+                                <input type='submit' value='Save' id='quantecMutatorDialogSave' className='quantecMutatorDialogSave' disabled={this.state.submitDisabled} />
                             </div>
                         </form>
                     </div>    
@@ -807,9 +807,9 @@ class Quantec extends React.Component {
                         <form id='setToleranceForm' onSubmit={this.onDialogFormSubmit}>
                             <p>Images that are at least <input type='text' className='quantecPcnt' id='pcnt' value={this.state.formData.pcnt} onChange={this.onDialogFormChange} />% similar to a banned image and are posted in this server will be removed.</p>
                             <div className='flexHorizontal'>
-                                <input type='submit' value='Save' className='quantecMutatorDialogSave' disabled={this.state.submitDisabled} />
-                                <hr />
                                 <input type='button' value='Cancel' id='newBannedWordCancelButton' onClick={this.onDialogCancel} />
+                                <hr />
+                                <input type='submit' value='Save' className='quantecMutatorDialogSave' disabled={this.state.submitDisabled} />
                             </div>
                         </form>
                     </div>;

@@ -34,10 +34,10 @@ public class CredentialManager {
         SUPERUSER
     }
 
-    private static String generatePassword(int size){
+    private static String generatePassword(){
         StringBuilder pass = new StringBuilder();
         SecureRandom random = new SecureRandom();
-        for(int i = 0; i < size; i++){
+        for(int i = 0; i < CredentialManager.DEFAULT_MASTER_PSK_LENGTH; i++){
             pass.append(MASTER_PSK_CANDIDATE_CHARS.toCharArray()[random.nextInt(MASTER_PSK_CANDIDATE_CHARS.length())]);
         }
 
@@ -62,7 +62,7 @@ public class CredentialManager {
             this.credentialList = new LinkedList<>();
 
             // Add example credentials and save to file.
-            String password = generatePassword(DEFAULT_MASTER_PSK_LENGTH);
+            String password = generatePassword();
             Logging.logWarning("[Credential Manager] "+filename+" not found, creating new file with the same name and adding default credentials. You should log in and change these ASAP! Username: \""+MASTER_USR+"\" Password: \""+password+"\".");
             this.credentialList.add(new CredentialSet(MASTER_USR, password, USER_CLASS.SUPERUSER));
 
@@ -419,16 +419,6 @@ public class CredentialManager {
             }
         }
         Logging.logWarning("[CredentialManager] setDiscordID method failed due to credential set for user not being found.");
-    }
-
-    public Long getUserLastLogin(String username){
-        for(CredentialSet set : credentialList){
-            if(set.getUsername().equals(username)){
-                return set.getLastLogin();
-            }
-        }
-
-        return null;
     }
 
     public void setUserLastLogin(String username, long lastLogin){

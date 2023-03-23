@@ -126,6 +126,10 @@
   background-color: #3845D2;
 }
 
+.loginMenuDiscordIcon {
+  margin-right: 10px;
+}
+
 .loginReferralReason {
   margin-top: 50px;
   border: 2px solid whitesmoke;
