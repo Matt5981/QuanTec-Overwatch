@@ -10,8 +10,14 @@ import java.net.URL;
 
 public class ResponseTemplates {
 
+<<<<<<< HEAD
     private static final String STDHEADERS =
             // STOPSHIP change back to our domain!
+=======
+    public static final String STDHEADERS =
+            // STOPSHIP change back to https://thegaff.dev!
+            // TODO don't send Access-Control-Expose-Headers: Set-Cookie unless it's an auth request.
+>>>>>>> devel
             "Server: QuanTec\r\n" +
                     Logging.getDateHeader() + "\r\n" +
                     "Strict-Transport-Security: max-age=31536000; includeSubDomains\r\n" +
@@ -27,7 +33,7 @@ public class ResponseTemplates {
                 "Strict-Transport-Security: max-age=31536000; includeSubDomains\r\n" +
                 "Connection: Keep-Alive\r\n" +
                 "Access-Control-Allow-Origin: " + origin + "\r\n" +
-                "Access-Control-Allow-Methods: POST, GET, OPTIONS\r\n" +
+                "Access-Control-Allow-Methods: POST, GET, PUT, DELETE, OPTIONS\r\n" +
                 "Access-Control-Allow-Headers: Content-Type, Authorization, Cookie\r\n" +
                 "Access-Control-Expose-Headers: Set-Cookie\r\n" +
                 "Access-Control-Allow-Credentials: true\r\n" +
@@ -45,10 +51,27 @@ public class ResponseTemplates {
     public static String ValidAuthRequest(String token){
         return "HTTP/1.1 204 No Content\r\n" +
                 STDHEADERS +
+<<<<<<< HEAD
                 "Content-Type: application/json; charset=utf-8\r\n" +
                 // STOPSHIP set the 'Secure' attribute BEFORE deploying!
                 "Set-Cookie: btkn="+token+"; path=/; Secure; HttpOnly; Max-Age: 3600; SameSite=Strict\r\n" +
+=======
+                // STOPSHIP set the 'Secure' and 'SameSite' attributes BEFORE deploying! ; SameSite=Strict
+                "Set-Cookie: btkn="+token+"; path=/; HttpOnly; Max-Age: 3600; SameSite=Strict\r\n" +
+>>>>>>> devel
                 "\r\n";
+    }
+
+    // Discord OAuth variant of the above.
+    public static String validAuthRequest(String json, String token) {
+        return  "HTTP/1.1 200 OK\r\n" +
+                STDHEADERS +
+                "Content-Type: application/json; charset=utf-8\r\n" +
+                "Content-Length: " + json.length() + "\r\n" +
+                // STOPSHIP set the 'Secure' and 'SameSite' attributes BEFORE deploying! ; SameSite=Strict
+                "Set-Cookie: btkn="+token+"; path=/; HttpOnly; Max-Age: 3600; SameSite=Strict\r\n" +
+                "\r\n" +
+                json;
     }
 
     public static final String GET =

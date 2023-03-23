@@ -1,22 +1,23 @@
 # QuanTec Overwatch
 QuanTec Overwatch is a full stack web application designed to aid those who are unfamiliar with the command line in the operation of a server. The app uses Java for its backend, with react/ES6 for the frontend.
 #
-## Features in current version (v0.2 BETA)
+## Features in current version (v0.3.0)
 ### For standard users:
 - Live-updating view of the server's uptime.
 - Live view of the used disk space on each of the server's storage drives. Currently hard-coded.
 - Live view of active LXD containers, as well as the systemd service (a game server or something similar) within, and the IP ports said service is listening to.
+- Live view of the usage statistics of the 'QuanTec' Discord bot
+- Live leaderboard of emoji use, organized by Discord guild.
+
+
 ### For server administrators, or those who need to manage the server's active services:
 - The ability to start/stop LXD containers without needing to use the command line,
-- the ability to manage users of the webapp, including modifying their usernames/passwords on their behalf.
+- The ability to manage users of the webapp, including modifying their usernames/passwords on their behalf.
+- The ability to add, remove, or edit words/images that were banned by QuanTec, organized by guild and restricted to those with the `Manage Server` permission on their target guild.
+- The ability to download the aggregate image that QuanTec's adaptive filter is using as a comparator.
 #
 ## Development roadmap
 Features in this list are slated for development. The top-most version is being worked on right now!
-### v0.3 - The talkative update
-- Add the 'QuanTec' menu, complete with the ability to manage the QuanTec discord bot in the following ways:
-    - Change the bot's status
-    - Add images to the bot's image filter. Images will be adaptively filtered.
-    - See when the bot detects a removed image, along with who sent it.
 ### v0.4 - The administrative update
 - Add the ability for administrators to create, start, stop and delete containers.
 - Add the (limited) ability to transfer files into the containers.

@@ -40,7 +40,7 @@ public class LXDUtils {
     }
 
     /** <h2>Get LXD Instances</h2>
-     * Gets a list of LXD instances running on the system.
+     * Gets a list of LXD containers running on the system.
      * @return A 2D array of strings, each <code>String[]</code> corresponding to one container. each <code>String[]</code> contains exactly two strings: The first is the container name, and the second is the state of the container (as returned by <code>lxc list</code>). Alternatively, <code>null</code> may be returned if executing the command throws an <code>IOException</code>, or if the value returned is invalid.
      */
     public static String[][] getLXDInstances(){

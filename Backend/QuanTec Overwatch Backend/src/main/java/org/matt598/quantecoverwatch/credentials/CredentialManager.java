@@ -34,10 +34,10 @@ public class CredentialManager {
         SUPERUSER
     }
 
-    private static String generatePassword(int size){
+    private static String generatePassword(){
         StringBuilder pass = new StringBuilder();
         SecureRandom random = new SecureRandom();
-        for(int i = 0; i < size; i++){
+        for(int i = 0; i < CredentialManager.DEFAULT_MASTER_PSK_LENGTH; i++){
             pass.append(MASTER_PSK_CANDIDATE_CHARS.toCharArray()[random.nextInt(MASTER_PSK_CANDIDATE_CHARS.length())]);
         }
 
@@ -62,7 +62,7 @@ public class CredentialManager {
             this.credentialList = new LinkedList<>();
 
             // Add example credentials and save to file.
-            String password = generatePassword(DEFAULT_MASTER_PSK_LENGTH);
+            String password = generatePassword();
             Logging.logWarning("[Credential Manager] "+filename+" not found, creating new file with the same name and adding default credentials. You should log in and change these ASAP! Username: \""+MASTER_USR+"\" Password: \""+password+"\".");
             this.credentialList.add(new CredentialSet(MASTER_USR, password, USER_CLASS.SUPERUSER));
 
@@ -207,7 +207,7 @@ public class CredentialManager {
         }
 
         if(guildsAtMe.getResponseCode() != 200){
-            Logging.logWarning("Discord /users/@me/guilds returned "+usersAtMe.getResponseCode()+" "+usersAtMe.getResponseMessage()+".");
+            Logging.logWarning("Discord /users/@me/guilds returned "+guildsAtMe.getResponseCode()+" "+guildsAtMe.getResponseMessage()+".");
             return null;
         }
 
@@ -230,7 +230,7 @@ public class CredentialManager {
             return null;
         }
 
-        String id = idRes.group();
+        String id = idRes.group(); // TODO start here, this is the user snowflake!
 
         // Revoke the token now that we have that in memory.
         Response revoke = Fetch.DiscordTokenRevoke(usrBtkn, discordOAuthPublic, discordOAuthSecret);
@@ -249,7 +249,7 @@ public class CredentialManager {
         for (CredentialSet set : credentialList) {
             if (set.getDiscordAccount().equals(id)) {
                 // Hit!
-                return new String[]{set.getUsername(), createBearerToken(set.getUsername())};
+                return new String[]{set.getUsername(), createBearerToken(set.getUsername(), true), id};
             }
         }
 
@@ -257,7 +257,7 @@ public class CredentialManager {
         // need to work out if the user is a member of said guild. If they are, generate a SSO-only user (locked to no permissions)
         // and approve the sign in.
         // I was particularly tired when doing this, so I have done the unforgivable... Destroyed my own morals and used...
-        // A DEPENDENCY.
+        // A DEPENDENCY. Luckily Jackson isn't a small one, so it's mostly justified.
         try {
             ObjectMapper mapper = new ObjectMapper();
             List<Map<String,Object>> guilds = mapper.readValue(guildsAtMe.getResponse(), new TypeReference<>() {});
@@ -270,7 +270,7 @@ public class CredentialManager {
                     String fullName = usrInfo.get("username") + "#" + usrInfo.get("discriminator");
                     credentialList.add(new CredentialSet(fullName, id));
                     Logging.logInfo("[Credential Manager] New SSO-Only user created, with username \""+fullName+"\" due to membership in override server.");
-                    return new String[]{fullName, createBearerToken(fullName)};
+                    return new String[]{fullName, createBearerToken(fullName, true), id};
                 }
             }
 
@@ -279,7 +279,6 @@ public class CredentialManager {
             Logging.logWarning("Exception thrown by Jackson while processing guilds. Printing stack trace:");
             e.printStackTrace();
         }
-
 
         Logging.logInfo("[Credential Manager] Discord SSO attempted by unknown user.");
         return null;
@@ -319,13 +318,14 @@ public class CredentialManager {
      * Base64-encoded string, which cannot be retrieved again outside of the credential manager class.
      *
      * @param username the username to associate with the bearer token.
+     * @param SSO Whether or not the token was generated via OAuth.
      * @return The aforementioned, or <code>null</code> if the username was invalid.
      * @throws IllegalArgumentException if the username provided isn't known to the credentialManager.
      */
-    public String createBearerToken(String username){
+    public String createBearerToken(String username, boolean SSO){
         for(CredentialSet set : credentialList){
             if(set.getUsername().equals(username)){
-                BearerToken newToken = new BearerToken(username, TOKEN_LIFETIME, random);
+                BearerToken newToken = new BearerToken(username, TOKEN_LIFETIME, random, SSO);
                 this.tokens.add(newToken);
                 return newToken.token;
             }
@@ -405,21 +405,20 @@ public class CredentialManager {
         for(CredentialSet set : credentialList){
             if(set.getUsername().equals(username)){
                 set.setDiscordAccount(discordID);
+
+                // Invalidate any SSO tokens to prevent users from logging in via OAuth as one user, setting their
+                // snowflake to another, then gaining the privileges of said user.
+                for(BearerToken token : tokens){
+                    if(token.username.equals(set.getUsername())){
+                        token.invalidateSSO();
+                    }
+                }
+
                 credentialSetMutatorHandler();
                 return;
             }
         }
         Logging.logWarning("[CredentialManager] setDiscordID method failed due to credential set for user not being found.");
-    }
-
-    public Long getUserLastLogin(String username){
-        for(CredentialSet set : credentialList){
-            if(set.getUsername().equals(username)){
-                return set.getLastLogin();
-            }
-        }
-
-        return null;
     }
 
     public void setUserLastLogin(String username, long lastLogin){
@@ -446,6 +445,20 @@ public class CredentialManager {
             }
         }
         return null;
+    }
+
+    /** <h2>tokenGeneratedViaSSO</h2>
+     * Returns a boolean as to whether the provided token was generated from an SSO request.
+     * @param token The token to check.
+     * @return <code>true</code> if the token exists and was generated via SSO, otherwise false.
+     */
+    public boolean tokenGeneratedViaSSO(String token){
+        for(BearerToken check : tokens){
+            if(check.token.equals(token)){
+                return check.isSso();
+            }
+        }
+        return false;
     }
 
     /** <h2>revokeToken</h2>

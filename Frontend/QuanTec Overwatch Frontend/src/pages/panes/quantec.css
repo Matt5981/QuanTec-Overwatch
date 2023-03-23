@@ -1,14 +1,19 @@
-@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@100;500;700&display=swap');
 
 .Quantec {
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 100%;
+    flex-direction: column;
     background-color: rgb(55,55,55);
 }
 
-.quantecMessage {
+.quantecContentContainer {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 95%;
     border: 4px solid rgb(125,125,125);
     margin-left: 15px;
     margin-right: 15px;
@@ -18,7 +23,480 @@
     border-radius: 25px;
 }
 
-.quantecMessage > h1 {
+.quantecContentContainer > * {
+    margin: 0;
+}
+
+.quantecContentContainer > h1 {
+    margin-top: 10px;
+    margin-left: 20px;
+    margin-right: auto;
+    font-family: 'Roboto';
+    font-weight: 700;
+    color: whitesmoke;
+}
+
+.quantecContentContainer > h2 {
+    margin-top: 10px;
+    margin-left: 30px;
+    margin-bottom: 10px;
+    margin-right: auto;
+    font-family: 'Roboto';
+    font-weight: 100;
+    color: whitesmoke;
+}
+
+.quantecContentContainer > .quantecAdminErrorMessage {
+    margin-top: 10px;
+    margin-bottom: 10px;
+    margin-left: auto;
+    margin-right: auto;
+    text-align: center;
+}
+
+.quantecContentContainerSubContainer {
+    border: 2px solid rgb(125,125,125);
+    border-radius: 25px;
+    width: 49%;
+    height: 350px;
+    margin-left: 1%;
+    margin-right: 1%;
+    color: whitesmoke;
+}
+
+.quantecContentContainerEmoteLeaderboardContainer {
+    border: 2px solid rgb(125,125,125);
+    border-radius: 25px;
+    width: 98%;
+    min-height: 350px;
+    margin-left: 1%;
+    margin-right: 1%;
+    margin-top: 25px;
+    color: whitesmoke;
+}
+
+.quantecContentContainerSubContainer > h1, .quantecContentContainerEmoteLeaderboardContainer > h1 {
+    margin-top: 10px;
+    margin-left: 20px;
+    margin-right: auto;
+    font-family: 'Roboto';
+    font-weight: 500;
+    color: whitesmoke;
+}
+
+.quantecContentContainerSubContainer > h2, .quantecContentContainerEmoteLeaderboardContainer > h2 {
+    margin-top: 10px;
+    margin-left: 30px;
+    margin-right: auto;
+    font-family: 'Roboto';
+    font-weight: 100;
+    color: whitesmoke;
+}
+
+.quantecAnalyticsTable {
+    width: 96%;
+    color: whitesmoke;
+}
+
+.quantecAnalyticsTable > tbody > tr > * {
+    padding-left: 15px;
+    padding-right: 15px;
+}
+
+.quantecAnalyticsTable > tbody > tr:nth-child(odd){
+    background-color: rgb(60,60,60);
+}
+
+.QuantecEmoteLeaderboardGuildSelectorContainer, .QuantecBannedWordsGuildSelectorContainer {
+    margin-left: 30px;
+}
+
+.QuantecEmoteLeaderboardGuildSelectorDropdown {
+    transition: 0.15s linear;
+    overflow: hidden;
+    /* I DID NOT WRITE THIS CODE - Wizardry obtained from lordvcs' answer on https://stackoverflow.com/questions/6089548/css3-height-transition-not-working */
+    max-height: 15em;
+}
+
+.QuantecEmoteLeaderboardGuildSelectorDropdown-hidden {
+    max-height: 0px;
+}
+
+.quantecEmoteLeaderboardGuildSelectorActive, .quantecEmoteLeaderboardGuildSelectorInactive {
+    border: 2px solid rgb(125,125,125);
+    width: 300px;
+    height: 50px;
+    display: flex;
+    flex-direction: row;
+    justify-content: left;
+    align-items: center;
+    font-family: 'Roboto';
+    font-weight: 500;
+    color: whitesmoke;
+}
+
+.quantecEmoteLeaderboardGuildSelectorActive > img, .quantecEmoteLeaderboardGuildSelectorInactive > img {
+    height: 40px;
+    width: 40px;
+    border-radius: 50%;
+    margin-left: 10px;
+    margin-right: 10px;
+}
+
+.quantecEmoteLeaderboard {
+    width: 95%;
+    margin: 2.5%;
+}
+
+.quantecEmoteLeaderboardTableRow, .quantecEmoteLeaderboardTableHeader {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 60px;
+}
+
+.quantecEmoteLeaderboardBody {
+    max-height: 300px;
+    overflow-y: scroll;
+}
+
+.quantecEmoteLeaderboardBody > div:nth-child(odd){
+    background-color: rgb(60,60,60);
+}
+
+.quantecEmoteLeaderboardBody > div:nth-child(even){
+    background-color: rgb(65,65,65);
+}
+
+.quantecEmoteLeaderboardTableHeader > p {
+    margin-left: 100px;
+    margin-right: 60px;
+    color: whitesmoke;
+}
+
+.quantecEmoteLeaderboardTableRow > p {
+    margin-left: 50px;
+    margin-right: 100px;
+}
+
+#quantecEmoteLeaderboardEmoteLabel {
+    margin-left: 10%;
+    margin-right: 10%;
+}
+
+.quantecEmoteLeaderboardTableRow > img {
+    height: 40px;
+    width: 40px;
+    margin-left: 10%;
+    margin-right: 10%;
+    margin-top: 2.5%;
+    margin-bottom: 2.5%;
+}
+
+.quantecEmoteLeaderboardGuildSelectorInactive {
+    border: 0;
+    border-bottom: 1px solid rgb(125,125,125);
+    background-color: rgb(75,75,75);
+    margin-left: 2px;
+}
+
+.quantecBannedWordRow {
+    color: whitesmoke;
+    text-align: center;
+}
+
+.quantecBannedWordRow > p {
+    margin-left: 0;
+    text-align: center;
+    width: 237.5px;
+}
+
+.quantecBannedWordDeleteButton, .quantecBannedImageTableMutator {
+    margin-left: 5px;
+    margin-right: 5px;
+}
+
+.quantecBannedWordDeleteButton {
+    background-color: rgb(45,0,0);
+    color: whitesmoke;
+    font-family: 'Courier';
+    font-size: 16px;
+    border: 2px solid whitesmoke;
+    border-radius: 10px;
+    height: 30px;
+    width: 70px;
+    margin-right: 20px;
+    transition: 0.15s;
+}
+
+.quantecBannedWordDeleteButton:hover {
+    background-color: rgb(65,0,0);
+}
+
+.quantecBannedWordDeleteButton:active {
+    background-color: rgb(75,0,0);
+}
+
+#newBannedWord, .bannedWordsNewButton {
+    background-color: rgb(45,45,45);
     font-family: 'Roboto';
     color: whitesmoke;
+    font-size: 18px;
+    font-weight: 500;
+    border: 2px solid whitesmoke;
+    border-radius: 15px;
+    width: 100px;
+    height: 40px;
+    margin-right: 2.5%;
+    justify-self: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: 0.15s;
+}
+
+#newBannedWord:hover, .bannedWordsNewButton:hover {
+    background-color: rgb(55,55,55);
+}
+
+#newBannedWord:active, .bannedWordsNewButton:active {
+    background-color: rgb(65,65,65);
+}
+
+#newBannedWord > *, .bannedWordsNewButton > *{
+    pointer-events: none;
+    -moz-user-select: none;
+    -webkit-user-select: none;
+}
+
+.quantecBannedImageTableMutator {
+    background-color: rgb(45,45,45);
+    border: 2px solid whitesmoke;
+    border-radius: 10px;
+    height: 30px;
+    min-width: 70px;
+    color: whitesmoke;
+    font-family: 'Courier';
+    font-size: 16px;
+    transition: 0.15s;
+}
+
+.quantecBannedImageTableMutator:hover {
+    background-color: rgb(55,55,55);
+}
+
+.quantecBannedImageTableMutator:active {
+    background-color: rgb(65,65,65);
+}
+
+#quantecBannedImageTable > .quantecEmoteLeaderboardBody > .quantecEmoteLeaderboardTableRow > p {
+    margin: 0;
+    width: 275px;
+}
+
+#quantecBannedImageTable > .quantecEmoteLeaderboardTableHeader > p {
+    width: 275px;
+}
+
+@keyframes dialogOverlayAppear {
+    0% {
+        opacity: 0%;
+    }
+
+    100% {
+        opacity: 100%;
+    }
+}
+
+.dialogOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    width: 100vw;
+    background-color: rgba(0,0,0,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: dialogOverlayAppear 0.3s ease;
+}
+
+@keyframes dialogContainerAppear {
+    0% {
+        transform: translateY(-100px);
+        opacity: 25%;
+    }
+
+    100% {
+        transform: translateY(0);
+        opacity: 100%;
+    }
+}
+
+
+.dialogContainer {
+    background-color: rgb(45,45,45);
+    border: 2px solid whitesmoke;
+    border-radius: 25px;
+    padding: 15px;
+    animation: dialogContainerAppear 0.3s ease;
+    color: whitesmoke;
+    font-family: 'Roboto';
+}
+
+.dialogContainer > h1 {
+    margin-bottom: 0;
+}
+
+.dialogContainer > h2 {
+    margin-left: 10px;
+    font-weight: 100;
+    margin-top: 0;
+}
+
+#newBannedWordForm, #newBannedImageForm, #fileUploadWrapperButton {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+label > p {
+    margin: 0;
+}
+
+#newBannedWordForm > #word, #newBannedImageForm > label > #nick, #editBannedImageForm > label > #nick {
+    background-color: rgb(45,45,45);
+    border: 2px solid whitesmoke;
+    border-radius: 25px;
+    font-family: 'Roboto';
+    font-size: 16px;
+    height: 25px;
+    width: 300px;
+    padding-left: 15px;
+    margin-bottom: 10px;
+    color: white;
+}
+
+#newBannedImageForm > * {
+    margin: 5px;
+}
+
+#newBannedImageForm > label {
+    width: 100%;
+}
+
+#fileUploadStatusText {
+    font-family: 'Courier';
+}
+
+#newBannedWordCancelButton, #newBannedWordBanButton, #fileUploadWrapperButton, .quantecMutatorDialogSave {
+    border: 2px solid whitesmoke;
+    border-radius: 25px;
+    height: 35px;
+    width: 100px;
+    font-family: 'Roboto';
+    font-size: 16px;
+    color: whitesmoke;
+}
+
+#newBannedWordCancelButton, #fileUploadWrapperButton, .quantecMutatorDialogSave {
+    background-color: rgb(45,45,45);
+}
+
+#newBannedWordCancelButton:hover, #fileUploadWrapperButton:hover, .quantecMutatorDialogSave:hover {
+    background-color: rgb(55,55,55);
+}
+
+#newBannedWordCancelButton:active, #fileUploadWrapperButton:active, .quantecMutatorDialogSave:active {
+    background-color: rgb(65,65,65);
+}
+
+#newBannedWordBanButton {
+    background-color: rgb(45,0,0);
+}
+
+#newBannedWordBanButton:hover {
+    background-color: rgb(55,0,0);
+}
+
+#newBannedWordBanButton:active {
+    background-color: rgb(65,0,0);
+}
+
+#newBannedWordBanButton:disabled {
+    background-color: rgb(35,35,35);
+}
+
+.quantecMutatorDialogSave:disabled {
+    background-color: rgb(35,35,35);
+}
+
+#fileUpload {
+    display: none;
+}
+
+.adaptiveSwitch {
+    background-color: rgb(128,0,0);
+    content: 'O';
+    font-family: 'Roboto';
+    color: whitesmoke;
+    border: 2px solid whitesmoke;
+    border-radius: 25px;
+    width: 75px;
+    height: 35px;
+    transition: 0.15s;
+    margin-bottom: 20px;
+}
+
+.adaptiveSwitchOn {
+    background-color: rgb(0,128,0);
+    content: 'I'
+}
+
+.quantecSwitchCircle {
+    border-radius: 50%;
+    display: block;
+    margin-top: 2.5px;
+    margin-left: 2.5px;
+    height: 30px;
+    width: 30px;
+    background-color: whitesmoke;
+    transition: 0.15s;
+}
+
+.quantecSwitchCircleOn {
+    transform: translateX(40px);
+}
+
+#pcnt {
+    background-color: rgb(55,55,55);
+    border: 2px solid whitesmoke;
+    font-family: 'Courier';
+    font-size: 16px;
+    color: whitesmoke;
+    text-align: right;
+    width: 30px;
+}
+
+#setTolerance {
+    width: 225px;
+}
+
+#setTolerance > * {
+    pointer-events: none;
+    -moz-user-select: none;
+    -webkit-user-select: none;
+}
+
+.quantecAdminSettingsNoData {
+    height: 110px;
+    width: 95%;
+    margin-top: 20px;
+}
+
+.disabled {
+    display: none !important;
 }

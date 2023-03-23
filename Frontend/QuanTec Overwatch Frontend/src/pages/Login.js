@@ -17,7 +17,7 @@ class Login extends React.Component {
       submit_button_classes: "submit",
       login: "",
       // STOPSHIP change back to https!!!
-      referralReason: !window.location.toString().startsWith('http://') ? (<h1><span style={{color: 'red', backgroundColor: 'white'}}>WARNING: THIS BROWSER IS NOT USING HTTPS. DO NOT ENTER YOUR PASSWORD!</span></h1>) : localStorage.getItem('kickoutReferralReason'),
+      referralReason: !window.location.toString().startsWith('http://') ? (<h1><span style={{color: 'red', backgroundColor: 'white'}}>WARNING: THIS BROWSER IS NOT USING HTTPS. DO NOT ATTEMPT TO LOGIN!</span></h1>) : localStorage.getItem('kickoutReferralReason'),
       shouldShowReferralReason: localStorage.getItem('kickoutReferralReason') !== null || !window.location.toString().startsWith('http://'),
       referralReasonLocked: !window.location.toString().startsWith('http://'),
       failedLogins: 0,
@@ -53,7 +53,7 @@ class Login extends React.Component {
         sessionStorage.clear();
       } else {
         // State matches and we've got the code, send a custom login request to the auth endpoint.
-        fetch(new Request(SERVER_IP+'auth', {method: 'POST', mode: 'cors', body: JSON.stringify({code: params.get('code'), method: 'discord'})})).then(res => {
+        fetch(new Request(SERVER_IP+'auth', {method: 'POST', mode: 'cors', credentials: 'include', body: JSON.stringify({code: params.get('code'), method: 'discord'})})).then(res => {
           if(res.status !== 200){
             // Denied, unlock form, reset sessionStorage and continue.
             sessionStorage.clear();
@@ -80,8 +80,9 @@ class Login extends React.Component {
         }).then(
           res => {
             if(res !== undefined){
-              // Same as regular login, though with content containing a 'username' field.
+              // Same as regular login, though with content containing a 'username' and 'snowflake' field so we can populate localStorage.
               localStorage.setItem('username', res.username);
+              localStorage.setItem('discordSnowflake', res.snowflake);
               localStorage.removeItem('kickoutReferralReason');
               sessionStorage.clear();
               this.props.navigate('/console');
@@ -189,7 +190,7 @@ class Login extends React.Component {
     return (
       <div className="container">
         <div className={this.state.killScreen ? 'App disabled' : "App"}>
-          <h1 id="title">QuanTec Overwatch v0.2.1b</h1>
+          <h1 id="title">QuanTec Overwatch v0.3.0b</h1>
           <form id="login" onSubmit={this.onFormSubmit}>
             <label className="loginfield">Username</label>
             <input type="text" id="username" value={this.state.username} onChange={this.onFormChange} />
@@ -211,9 +212,13 @@ class Login extends React.Component {
             window.location.href = 'https://discord.com/oauth2/authorize?response_type=code&client_id=1075308298049437726&scope=identify%20guilds&state=' + id + '&redirect_uri=http%3A%2F%2Flocalhost:3000&prompt=consent'; // '&redirect_uri=https%3A%2F%2Fthegaff.dev&prompt=consent'
             }}>
               {
-                <div style={{height: '100%', width: '15%'}} className='flexHorizontal' dangerouslySetInnerHTML={{__html: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 127.14 96.36"><defs><style>.cls-1{fill:#fff;}</style></defs><g id="图层_2" data-name="图层 2"><g id="Discord_Logos" data-name="Discord Logos"><g id="Discord_Logo_-_Large_-_White" data-name="Discord Logo - Large - White"><path class="cls-1" d="M107.7,8.07A105.15,105.15,0,0,0,81.47,0a72.06,72.06,0,0,0-3.36,6.83A97.68,97.68,0,0,0,49,6.83,72.37,72.37,0,0,0,45.64,0,105.89,105.89,0,0,0,19.39,8.09C2.79,32.65-1.71,56.6.54,80.21h0A105.73,105.73,0,0,0,32.71,96.36,77.7,77.7,0,0,0,39.6,85.25a68.42,68.42,0,0,1-10.85-5.18c.91-.66,1.8-1.34,2.66-2a75.57,75.57,0,0,0,64.32,0c.87.71,1.76,1.39,2.66,2a68.68,68.68,0,0,1-10.87,5.19,77,77,0,0,0,6.89,11.1A105.25,105.25,0,0,0,126.6,80.22h0C129.24,52.84,122.09,29.11,107.7,8.07ZM42.45,65.69C36.18,65.69,31,60,31,53s5-12.74,11.43-12.74S54,46,53.89,53,48.84,65.69,42.45,65.69Zm42.24,0C78.41,65.69,73.25,60,73.25,53s5-12.74,11.44-12.74S96.23,46,96.12,53,91.08,65.69,84.69,65.69Z"/></g></g></g></svg>'}} />
+                <div style={{height: '100%', width: '15%'}} className='flexHorizontal loginMenuDiscordIcon' dangerouslySetInnerHTML={{__html: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 127.14 96.36"><defs><style>.cls-1{fill:#fff;}</style></defs><g id="图层_2" data-name="图层 2"><g id="Discord_Logos" data-name="Discord Logos"><g id="Discord_Logo_-_Large_-_White" data-name="Discord Logo - Large - White"><path class="cls-1" d="M107.7,8.07A105.15,105.15,0,0,0,81.47,0a72.06,72.06,0,0,0-3.36,6.83A97.68,97.68,0,0,0,49,6.83,72.37,72.37,0,0,0,45.64,0,105.89,105.89,0,0,0,19.39,8.09C2.79,32.65-1.71,56.6.54,80.21h0A105.73,105.73,0,0,0,32.71,96.36,77.7,77.7,0,0,0,39.6,85.25a68.42,68.42,0,0,1-10.85-5.18c.91-.66,1.8-1.34,2.66-2a75.57,75.57,0,0,0,64.32,0c.87.71,1.76,1.39,2.66,2a68.68,68.68,0,0,1-10.87,5.19,77,77,0,0,0,6.89,11.1A105.25,105.25,0,0,0,126.6,80.22h0C129.24,52.84,122.09,29.11,107.7,8.07ZM42.45,65.69C36.18,65.69,31,60,31,53s5-12.74,11.43-12.74S54,46,53.89,53,48.84,65.69,42.45,65.69Zm42.24,0C78.41,65.69,73.25,60,73.25,53s5-12.74,11.44-12.74S96.23,46,96.12,53,91.08,65.69,84.69,65.69Z"/></g></g></g></svg>'}} />
               }
+<<<<<<< HEAD
               <p style={{paddingLeft: '7.5px'}}>Login with Discord</p></button>
+>>>>>>> devel
+=======
+              <p>Login with Discord</p></button>
 >>>>>>> devel
         </div>
         <video preload='true' autoPlay={this.state.killScreen} loop={true} className={this.state.killScreen ? null : 'disabled'}>

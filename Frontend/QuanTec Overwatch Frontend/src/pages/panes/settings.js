@@ -499,8 +499,8 @@ class Settings extends React.Component {
                     </div> : null
                     }
                 </div>
-                <div className={this.state.currentUserDetailChangeDialog === 'newUser' ? 'dialogBoxContainer' : 'dialogBoxContainer hidden'}>
-                    <div className='settingsContainer'>
+                <div className={this.state.currentUserDetailChangeDialog === 'newUser' ? 'dialogBoxContainer' : 'dialogBoxContainer hidden'} onClick={this.onNewUserFormCancel}>
+                    <div className='settingsContainer' onClick={event => event.stopPropagation()}>
                         <h1>ADMIN // User Management // New User</h1>
                         <form id='newUser' onSubmit={this.onNewUserFormSubmit}>
                             <label>Username</label>
@@ -515,8 +515,8 @@ class Settings extends React.Component {
                         </form>
                     </div>
                 </div>
-                <div className={this.state.currentUserDetailChangeDialog === 'changeUsername' ? 'dialogBoxContainer' : 'dialogBoxContainer hidden'}>
-                    <div className='settingsContainer'>
+                <div className={this.state.currentUserDetailChangeDialog === 'changeUsername' ? 'dialogBoxContainer' : 'dialogBoxContainer hidden'} onClick={this.onNewUserFormCancel}>
+                    <div className='settingsContainer' onClick={event => event.stopPropagation()}>
                         <h1>ADMIN // User Management // Change Username</h1>
                         <h2>// Current Username: {this.state.editUserDropdown}</h2>
                         <form id='newUser' onSubmit={this.onNewUserFormSubmit}>
@@ -532,8 +532,8 @@ class Settings extends React.Component {
                         </form>
                     </div>
                 </div>
-                <div className={this.state.currentUserDetailChangeDialog === 'changeOtherPass' ? 'dialogBoxContainer' : 'dialogBoxContainer hidden'}>
-                    <div className='settingsContainer'>
+                <div className={this.state.currentUserDetailChangeDialog === 'changeOtherPass' ? 'dialogBoxContainer' : 'dialogBoxContainer hidden'} onClick={this.onNewUserFormCancel}>
+                    <div className='settingsContainer' onClick={event => event.stopPropagation()}>
                         <h1>ADMIN // User Management // Change Password</h1>
                         <h2>// Changing password for user '{this.state.editUserDropdown}'</h2>
                         <form id='newUser' onSubmit={this.onNewUserFormSubmit}>
@@ -549,8 +549,8 @@ class Settings extends React.Component {
                         </form>
                     </div>
                 </div>
-                <div className={this.state.currentUserDetailChangeDialog === 'changeOwnPass' ? 'dialogBoxContainer' : 'dialogBoxContainer hidden'}>
-                    <div className='settingsContainer'>
+                <div className={this.state.currentUserDetailChangeDialog === 'changeOwnPass' ? 'dialogBoxContainer' : 'dialogBoxContainer hidden'} onClick={this.onNewUserFormCancel}>
+                    <div className='settingsContainer' onClick={event => event.stopPropagation()}>
                         <h1>User Settings // Change Password</h1>
                         <h2>// You will be logged out automatically upon clicking 'Change'.</h2>
                         <form id='newUser' onSubmit={this.onNewUserFormSubmit}>

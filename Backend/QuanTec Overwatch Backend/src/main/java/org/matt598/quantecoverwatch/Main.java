@@ -20,10 +20,10 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 // TODO chunked encoding support is mandatory for HTTP/1.1 compliance
-// TODO DELETE and PUT methods are required for RESTful compliance
+// TODO commands must be remapped to GET/POST/PUT/DELETE/PATCH operations using endpoints to determine what must be done.
 
 public class Main {
-    private static final String VERSION = "v0.2 Beta";
+    private static final String VERSION = "v0.3 Beta";
     private static final int PORT = 8443;
     public static final String USER_CREDENTIAL_FILE = "quantec.secret";
 
@@ -57,7 +57,7 @@ public class Main {
         service.scheduleAtFixedRate(new ClientReaper(clientList), 60, 60, TimeUnit.SECONDS);
 
         try(ServerSocket serverSocket = new ServerSocket(8443)) {
-            // Accept new connections on loop. Client requests are handled in threads. TODO report thread usage on app itself.
+            // Accept new connections on loop. Client requests are handled in threads.
             Logging.logInfo(String.format("[System] Started, listening on %d/tcp.", PORT));
             while(true){
                 clientList.add(new Client(serverSocket.accept(), credentialManager));
